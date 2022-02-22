@@ -17,9 +17,7 @@ require('colors');
                 date: new Date().getTime(),
                 displayDate: new Date().toLocaleString(),
                 id: process.argv[3],
-                log: {
-                    message: text,
-                },
+                log: { message: text },
             });
         }
     }
@@ -86,13 +84,12 @@ require('colors');
             await awaitReady();
             let i = 0;
             let proxyI = 0;
-            const
-                queueRegex = /(?<=Position in queue: )\d+/gm,
-                spaceRegex = /\s{2,}/gm,
+            const spaceRegex = /\s{2,}/gm,
                 array = process.argv[2].split(','),
-                { host, port } = require('../servers/servers.json')['7b7t'];
+                host = '7b7t.org',
+                port = 25565;
             shuffleArray(array);
-            /** @type {require('mineflayer').Bot} */
+            /** @type {import('mineflayer').Bot} */
             let bot;
             const proxyArray = shuffleArray(process.argv[4].split(','));
             for (const username of array) {
@@ -123,23 +120,15 @@ require('colors');
                                 },
                             }, (err, info) => {
                                 if (err) {
-                                    if (err.toString().includes('ETIMEDOUT') || err.toString().includes('Proxy connection timed out')) {
-                                        log(`[${username}] Proxy timed out`.bgRed);
-                                    } else if (err.toString().includes('Socket closed')) {
-                                        log(`[${username}] Proxy socket closed`.bgRed);
-                                    } else if (err.toString().includes('ECONNRESET')) {
-                                        log(`[${username}] Proxy connection reset`.bgRed);
-                                    } else if (err.toString().includes('ECONNREFUSED') || err.toString().includes('ConnectionRefused')) {
-                                        log(`[${username}] Proxy connection refused`.bgRed);
-                                    } else if (err.toString().includes('Authentication failed')) {
-                                        log(`[${username}] Proxy authentication failed`.bgRed);
-                                    } else if (err.toString().includes('Received invalid Socks5 initial handshake')) {
-                                        log(`[${username}] Received invalid Socks5 initial handshake`.bgRed);
-                                    } else if (err.toString().includes('HostUnreachable')) {
-                                        log(`[${username}] Host unreachable`.bgRed);
-                                    } else if (err.toString().includes('Failure')) {
-                                        log(`[${username}] Failure`.bgRed);
-                                    } else console.log(err);
+                                    if (err.toString().includes('ETIMEDOUT') || err.toString().includes('Proxy connection timed out')) log(`[${username}] Proxy timed out`.bgRed);
+                                    else if (err.toString().includes('Socket closed')) log(`[${username}] Proxy socket closed`.bgRed);
+                                    else if (err.toString().includes('ECONNRESET')) log(`[${username}] Proxy connection reset`.bgRed);
+                                    else if (err.toString().includes('ECONNREFUSED') || err.toString().includes('ConnectionRefused')) log(`[${username}] Proxy connection refused`.bgRed);
+                                    else if (err.toString().includes('Authentication failed')) log(`[${username}] Proxy authentication failed`.bgRed);
+                                    else if (err.toString().includes('Received invalid Socks5 initial handshake')) log(`[${username}] Received invalid Socks5 initial handshake`.bgRed);
+                                    else if (err.toString().includes('HostUnreachable')) log(`[${username}] Host unreachable`.bgRed);
+                                    else if (err.toString().includes('Failure')) log(`[${username}] Failure`.bgRed);
+                                    else console.log(err);
                                     return;
                                 }
                                 client.setSocket(info.socket);
@@ -190,17 +179,11 @@ require('colors');
                 bot.once('kicked', reason => {
                     const jsonReason = JSON.parse(reason);
                     try {
-                        if (jsonReason.extra[0].extra[1].text.includes('BotSentry') && jsonReason.extra[0].extra[5].text.includes('IP is blacklisted')) {
-                            log(`[${username}] IP blacklist by BotSentry`.red);
-                        } else if (jsonReason.extra[0].extra[3].text.includes('Bot Attack')) {
-                            log(`[${username}] BotSentry AntiBot mode is on for ${jsonReason.extra[0].extra[7]}s`.red);
-                        } else if (jsonReason.extra[0].extra[3].text.includes('limit of accounts')) {
-                            log(`[${username}] IP blacklist for per-IP account limit by BotSentry`.red);
-                        } else if (jsonReason.extra[0].extra[5].text.includes('dangerous activity')) {
-                            log(`[${username}] BotSentry is analyzing the connection`.red);
-                        } else {
-                            console.log(jsonReason.extra[0]);
-                        }
+                        if (jsonReason.extra[0].extra[1].text.includes('BotSentry') && jsonReason.extra[0].extra[5].text.includes('IP is blacklisted')) log(`[${username}] IP blacklist by BotSentry`.red);
+                        else if (jsonReason.extra[0].extra[3].text.includes('Bot Attack')) log(`[${username}] BotSentry AntiBot mode is on for ${jsonReason.extra[0].extra[7]}s`.red);
+                        else if (jsonReason.extra[0].extra[3].text.includes('limit of accounts')) log(`[${username}] IP blacklist for per-IP account limit by BotSentry`.red);
+                        else if (jsonReason.extra[0].extra[5].text.includes('dangerous activity')) log(`[${username}] BotSentry is analyzing the connection`.red);
+                        else console.log(jsonReason.extra[0]);
                     } catch (err) {
                         console.log(err);
                         console.log(reason);
