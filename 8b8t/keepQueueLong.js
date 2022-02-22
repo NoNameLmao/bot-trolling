@@ -3,10 +3,10 @@ const wt = require('worker_threads'),
     os = require('os'),
     { SocksClient } = require('socks'),
     { sleep, getRandomArbitrary, shuffleArray } = require('emberutils'),
-    ProxyScraper = require('simple-proxy-scraper').ProxyScrape;
+    ProxyScraper = require('../proxy-things/proxy-scrape');
 require('colors');
 
-(async() => {
+(async () => {
     function log(text) {
         if (wt.isMainThread) {
             console.log(`[${'M0'.green}] [${new Date().toLocaleString()}] ${text}`);
@@ -23,7 +23,7 @@ require('colors');
         workers: 10,
         bots: 10,
     };
-    const useProxy = true;
+    const useProxy = false;
     const useTimeout = false;
 
     if (wt.isMainThread) {
@@ -89,7 +89,7 @@ require('colors');
             let proxyI = 0;
             const spaceRegex = /\s{2,}/gm,
                 array = process.argv[2].split(','),
-                host = '7b7t.org',
+                host = '8b8t.me',
                 port = 25565;
             shuffleArray(array);
             /** @type {import('mineflayer').Bot} */
@@ -186,6 +186,7 @@ require('colors');
                         } else bot.once('messagestr', botThing2);
                     });
                     bot.once('kicked', reason => {
+                        log(reason)
                         reason = JSON.parse(reason).text.toString();
                         log(`[${username}] ${reason.red}`.yellow + ', recreating the bot...');
                         log(`[${username}] Recreating the bot...`.green);
