@@ -1,10 +1,12 @@
+import "colors";
+import { Client } from "minecraft-protocol";
+
 const wt = require('worker_threads');
 const { createClient } = require('minecraft-protocol');
 const { fromNotch } = require('prismarine-chat')('1.12.2');
 const os = require('os');
 const { SocksClient } = require('socks');
 const { sleep, getRandomArbitrary } = require('emberutils');
-require('colors');
 
 (async() => {
         function log(text) {
@@ -68,8 +70,8 @@ require('colors');
                 wtArray.push(worker);
                 log(`Summoned worker number ${i + 1}... (${amount.workers - i - 1} left)`.green);
                 worker.on('message', message => { // jshint ignore:line
-                            const delay = parseInt(((new Date().getTime() - message.date) / 1000));
-                            let delayString = delay;
+                            const delay = (new Date().getTime() - message.date) / 1000;
+                            let delayString: string;
                             if (delay > 1 && delay < 5) delayString = `${delay}s ago`.yellow;
                             else if (delay > 5) delayString = `${delay}s ago`.red;
                             else if (delay === 0.000) delayString = `${delay}s ago`.bgGreen;
@@ -81,25 +83,26 @@ require('colors');
         }
         wtArray.forEach(worker => worker.postMessage({ ready: true }));
     } else {
-        (async () => {
+        await (async () => {
             function awaitReady() {
-                return new Promise(resolve => {
+                return new Promise<void>(resolve => {
                     wt.parentPort.once('message', async message => {
                         if (message.ready) resolve();
                         else await awaitReady();
                     });
                 });
             }
+
             await awaitReady();
             let i = 0;
             const
                 queueRegex = /(?<=Position in queue: )\d+/gm,
                 spaceRegex = /\s{2,}/gm,
                 array = process.argv[2].split(','),
-                { host, port } = require('../servers/servers.json')['7b7t']
+                {host, port} = require('../servers/servers.json')['7b7t']
             ;
             shuffleArray(array);
-            let bot;
+            let bot: Client;
             for (const username of array) {
                 async function createBot() {
                     if (useTimeout) {
@@ -145,12 +148,14 @@ require('colors');
                         version: '1.12.2'
                     });
                 }
+
                 i++;
                 log(`[${i}/${array.length}] Creating bot ${username}... (${array.length - i} left)`.green);
                 await createBot();
+
                 function botThing() {
                     log(`[${username}] Logged in`.green);
-                    bot.on('chat', async function botThing2(packet) {
+                    bot.on('chat', async function botThing2(message) {
                         if (message === '' || message === ' ' || message === '\u200b' || !message || spaceRegex.test(message)) return;
                         log(`[${username}] ${message}`.yellow);
                         if (message.includes('7b7t')) {
@@ -175,6 +180,7 @@ require('colors');
                         });
                     });
                 }
+
                 bot.once('login', botThing);
                 bot.once('kicked', reason => {
                     const jsonReason = JSON.parse(reason);

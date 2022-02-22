@@ -1,4 +1,4 @@
-/* 
+/*
     ============================= main goal =============================
     create a bot that will repeatedly try to join the server under some
     player's nick in order to effectively ban them from joining the server.
@@ -18,6 +18,7 @@
 
 import 'colors'
 import { Bot, createBot } from 'mineflayer'
+import { server, username } from '../config.json'
 
 let bot: Bot
 process.on('uncaughtException', exception => {
@@ -39,8 +40,8 @@ function troll() {
     log('[Bot] Logging in...'.yellow)
     // create the bot
     bot = createBot({
-        host: '8b8t.me',
-        username: 'BobTheBuilder229'
+        host: server,
+        username: username
     })
     // parse kick reason if kicked
     bot.once('kicked', async reason => {

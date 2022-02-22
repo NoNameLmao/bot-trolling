@@ -44,10 +44,8 @@ function returnParamString(options) {
     }
     return paramString;
 }
+
 class ProxyScrapeAPI {
-    constructor() {
-        this.proxies = [];
-    }
     /**
      * It does exactly what you think it does.
      * @param {{
@@ -66,23 +64,25 @@ class ProxyScrapeAPI {
             resolveWithFullResponse: true
         });
         /** @type {string} */
-        const { body } = await res;
+        const {body} = await res;
         const proxies = body
-        .split('\n')
-        .map(line => {
-            if (line.length > 5 && line !== undefined) {
-                return line.replace('\r', '');
-            }
-        });
+            .split('\n')
+            .map(line => {
+                if (line.length > 5) {
+                    return line.replace('\r', '');
+                }
+            });
         return proxies.filter(Boolean);
     }
+
     async getAmountProxies(options) {
         const reqUrl = `${apiRoot}?request=amountproxies${returnParamString(options)}`;
         const res = await request.get(reqUrl, {
             resolveWithFullResponse: true
         });
-        const { body } = await res;
+        const {body} = await res;
         return body;
     }
 }
+
 module.exports = new ProxyScrapeAPI();

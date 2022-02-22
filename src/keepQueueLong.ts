@@ -1,12 +1,12 @@
+import 'colors'
 const wt = require('worker_threads'),
     { createBot } = require('mineflayer'),
     os = require('os'),
     { SocksClient } = require('socks'),
     { sleep, getRandomArbitrary, shuffleArray } = require('emberutils'),
-    ProxyScraper = require('simple-proxy-scraper').ProxyScrape;
-require('colors');
+    ProxyScraper = require('../utils/proxy-scrape');
 
-(async() => {
+(async () => {
     function log(text) {
         if (wt.isMainThread) {
             console.log(`[${'M0'.green}] [${new Date().toLocaleString()}] ${text}`);
@@ -23,7 +23,7 @@ require('colors');
         workers: 10,
         bots: 10,
     };
-    const useProxy = true;
+    const useProxy = false;
     const useTimeout = false;
 
     if (wt.isMainThread) {
@@ -59,8 +59,8 @@ require('colors');
             wtArray.push(worker);
             log(`Summoned worker number ${i + 1}... (${amount.workers - i - 1} left)`.green);
             worker.on('message', message => {
-                const delay = parseInt(((new Date().getTime() - message.date) / 1000));
-                let delayString = delay;
+                const delay = (new Date().getTime() - message.date) / 1000;
+                let delayString: string;
                 if (delay > 1 && delay < 5) delayString = `${delay}s ago`.yellow;
                 else if (delay > 5) delayString = `${delay}s ago`.red;
                 else if (delay === 0.000) delayString = `${delay}s ago`.bgGreen;
@@ -75,7 +75,7 @@ require('colors');
         (async () => {
             // function to wait until all workers are ready and main thread sends the message to start
             function awaitReady() {
-                return new Promise(resolve => {
+                return new Promise<void>(resolve => {
                     wt.parentPort.once('message', async message => {
                         // if message object's ready property is "true", resolve
                         if (message.ready) resolve();
@@ -84,12 +84,13 @@ require('colors');
                     });
                 });
             }
+
             await awaitReady();
             let i = 0;
             let proxyI = 0;
             const spaceRegex = /\s{2,}/gm,
                 array = process.argv[2].split(','),
-                host = '7b7t.org',
+                host = '8b8t.me',
                 port = 25565;
             shuffleArray(array);
             /** @type {import('mineflayer').Bot} */
@@ -97,6 +98,7 @@ require('colors');
             const proxyArray = shuffleArray(process.argv[4].split(','));
             for (const username of array) {
                 proxyI++;
+
                 async function createaBot() {
                     // join with random delay
                     if (useTimeout) {
@@ -167,9 +169,11 @@ require('colors');
                         physicsEnabled: false,
                     });
                 }
+
                 i++;
                 log(`[${i}/${array.length}] Creating bot ${username}... (${array.length - i} left)`.green);
                 await createaBot();
+
                 function botThing() {
                     log(`[${username}] Logged in`.green);
                     bot.once('messagestr', async function botThing2(message) {
@@ -186,6 +190,7 @@ require('colors');
                         } else bot.once('messagestr', botThing2);
                     });
                     bot.once('kicked', reason => {
+                        log(reason)
                         reason = JSON.parse(reason).text.toString();
                         log(`[${username}] ${reason.red}`.yellow + ', recreating the bot...');
                         log(`[${username}] Recreating the bot...`.green);
@@ -197,6 +202,7 @@ require('colors');
                         });
                     });
                 }
+
                 bot.once('login', botThing);
                 bot.once('kicked', reason => {
                     const jsonReason = JSON.parse(reason);
