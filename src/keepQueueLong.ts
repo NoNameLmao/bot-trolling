@@ -15,10 +15,11 @@ import ProxyScraper from "../utils/proxy-scrape";
                 date: new Date().getTime(),
                 displayDate: new Date().toLocaleString(),
                 id: process.argv[3],
-                log: { message: text },
+                log: {message: text},
             });
         }
     }
+
     const amount = {
         workers: 10,
         bots: 10,
@@ -40,7 +41,7 @@ import ProxyScraper from "../utils/proxy-scrape";
         log('Starting worker spawning loop...'.green);
         const array = [];
         const wtArray = [];
-        const proxies = shuffleArray(await ProxyScraper.getProxies({ proxytype: 'socks5' }));
+        const proxies = shuffleArray(await ProxyScraper.getProxies({proxytype: 'socks5'}));
         let proxyI = 0;
         for (let i = 0; i < amount.workers; i++) {
             let nickname;
@@ -55,7 +56,7 @@ import ProxyScraper from "../utils/proxy-scrape";
                 log(`Username ${nickname} ready`.green);
             }
             proxyI++;
-            const worker = new wt.Worker(__filename, { argv: [array, i, proxies] });
+            const worker = new wt.Worker(__filename, {argv: [array, i, proxies]});
             wtArray.push(worker);
             log(`Summoned worker number ${i + 1}... (${amount.workers - i - 1} left)`.green);
             worker.on('message', message => {
@@ -69,7 +70,7 @@ import ProxyScraper from "../utils/proxy-scrape";
             });
         }
         // send "ready" message to each worker
-        wtArray.forEach(worker => worker.postMessage({ ready: true }));
+        wtArray.forEach(worker => worker.postMessage({ready: true}));
     } else {
         // code for workers
         (async () => {

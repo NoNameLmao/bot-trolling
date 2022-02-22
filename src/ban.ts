@@ -17,8 +17,8 @@
 */
 
 import 'colors'
-import { Bot, createBot } from 'mineflayer'
-import { server, username } from '../config.json'
+import {Bot, createBot} from 'mineflayer'
+import {server, username} from '../config.json'
 
 let bot: Bot
 process.on('uncaughtException', exception => {
@@ -68,6 +68,7 @@ function troll() {
         log(message.cyan)
     })
 }
+
 function log(text: string) {
     // fancy logging
     console.log(`[${new Date().toISOString()}] ${text}`)
