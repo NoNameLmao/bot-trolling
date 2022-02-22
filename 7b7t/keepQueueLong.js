@@ -27,7 +27,9 @@ require('colors');
     };
     const useProxy = true;
     const useTimeout = false;
+
     if (wt.isMainThread) {
+        // code for main thread only
         log('Starting...'.green);
         log(`Amount of workers: ${amount.workers}`.green);
         log('Importing usernames...'.green);
@@ -65,18 +67,21 @@ require('colors');
                 else if (delay > 5) delayString = `${delay}s ago`.red;
                 else if (delay === 0.000) delayString = `${delay}s ago`.bgGreen;
                 else delayString = `${delay}s ago`.green;
-                if (message.log) {
-                    console.log(`[${`W${message.id}`.yellow}] [${message.displayDate} (${delayString})] ${message.log.message}`);
-                }
+                if (message.log) console.log(`[${`W${message.id}`.yellow}] [${message.displayDate} (${delayString})] ${message.log.message}`);
             });
         }
+        // send "ready" message to each worker
         wtArray.forEach(worker => worker.postMessage({ ready: true }));
     } else {
+        // code for workers
         (async () => {
+            // function to wait until all workers are ready and main thread sends the message to start
             function awaitReady() {
                 return new Promise(resolve => {
                     wt.parentPort.once('message', async message => {
+                        // if message object's ready property is "true", resolve
                         if (message.ready) resolve();
+                        // otherwise keep waiting
                         else await awaitReady();
                     });
                 });
@@ -95,21 +100,29 @@ require('colors');
             for (const username of array) {
                 proxyI++;
                 async function createaBot() {
+                    // join with random delay
                     if (useTimeout) {
+                        // random time in range from 5s to 200s
                         const timeout = getRandomArbitrary(5000, 200000);
                         log(`[${username}] Waiting for ${timeout / 1000}s before logging in...`);
+                        // dont continue until timeout ends
                         await sleep(timeout);
                     }
+                    // if using proxies
                     if (useProxy) bot = createBot({
+                        // minimise render distance for less ram usage
                         viewDistance: 'tiny',
                         username: username,
                         host: host,
                         port: port,
+                        // disable physics
                         physicsEnabled: false,
                         connect: (client) => {
                             SocksClient.createConnection({
                                 proxy: {
+                                    // ip
                                     host: proxyArray[proxyI].split(':')[0],
+                                    // port
                                     port: parseInt(proxyArray[proxyI].split(':')[1]),
                                     type: 5,
                                 },
@@ -119,15 +132,25 @@ require('colors');
                                     port: port,
                                 },
                             }, (err, info) => {
+                                // PROXY ERRORS
                                 if (err) {
+                                    // connection times out
                                     if (err.toString().includes('ETIMEDOUT') || err.toString().includes('Proxy connection timed out')) log(`[${username}] Proxy timed out`.bgRed);
+                                    // closed socket
                                     else if (err.toString().includes('Socket closed')) log(`[${username}] Proxy socket closed`.bgRed);
+                                    // reset connection
                                     else if (err.toString().includes('ECONNRESET')) log(`[${username}] Proxy connection reset`.bgRed);
+                                    // connection refused
                                     else if (err.toString().includes('ECONNREFUSED') || err.toString().includes('ConnectionRefused')) log(`[${username}] Proxy connection refused`.bgRed);
+                                    // proxy auth failed (if proxy is protected by username:password)
                                     else if (err.toString().includes('Authentication failed')) log(`[${username}] Proxy authentication failed`.bgRed);
+                                    // not socks5
                                     else if (err.toString().includes('Received invalid Socks5 initial handshake')) log(`[${username}] Received invalid Socks5 initial handshake`.bgRed);
+                                    // 7b7t issue
                                     else if (err.toString().includes('HostUnreachable')) log(`[${username}] Host unreachable`.bgRed);
+                                    // i forgot when this happens 💀
                                     else if (err.toString().includes('Failure')) log(`[${username}] Failure`.bgRed);
+                                    // unknown error
                                     else console.log(err);
                                     return;
                                 }
@@ -137,6 +160,7 @@ require('colors');
                         },
                         loadInternalPlugins: false
                     });
+                    // else
                     else if (!useProxy) bot = createBot({
                         viewDistance: 'tiny',
                         username: username,
@@ -179,10 +203,15 @@ require('colors');
                 bot.once('kicked', reason => {
                     const jsonReason = JSON.parse(reason);
                     try {
+                        // blacklisted ip
                         if (jsonReason.extra[0].extra[1].text.includes('BotSentry') && jsonReason.extra[0].extra[5].text.includes('IP is blacklisted')) log(`[${username}] IP blacklist by BotSentry`.red);
+                        // antibot mode on
                         else if (jsonReason.extra[0].extra[3].text.includes('Bot Attack')) log(`[${username}] BotSentry AntiBot mode is on for ${jsonReason.extra[0].extra[7]}s`.red);
+                        // blacklisted for too many online players from single ip
                         else if (jsonReason.extra[0].extra[3].text.includes('limit of accounts')) log(`[${username}] IP blacklist for per-IP account limit by BotSentry`.red);
+                        // first time joining
                         else if (jsonReason.extra[0].extra[5].text.includes('dangerous activity')) log(`[${username}] BotSentry is analyzing the connection`.red);
+                        // something else
                         else console.log(jsonReason.extra[0]);
                     } catch (err) {
                         console.log(err);
