@@ -3,9 +3,7 @@ const wt = require('worker_threads'),
     os = require('os'),
     { SocksClient } = require('socks'),
     { sleep, getRandomArbitrary, shuffleArray } = require('emberutils'),
-    proxylist = require('proxylist'),
-    lightscrape = require('lightscrape'),
-    ProxyScraper = require('simple-proxy-scraper');
+    ProxyScraper = require('simple-proxy-scraper').ProxyScrape;
 require('colors');
 
 (async() => {
@@ -42,7 +40,7 @@ require('colors');
         log('Starting worker spawning loop...'.green);
         const array = [];
         const wtArray = [];
-        const proxies = shuffleArray(await ProxyScraper.ProxyScrape.getProxies({ proxytype: 'socks5' }));
+        const proxies = shuffleArray(await ProxyScraper.getProxies({ proxytype: 'socks5' }));
         let proxyI = 0;
         for (let i = 0; i < amount.workers; i++) {
             let nickname;
