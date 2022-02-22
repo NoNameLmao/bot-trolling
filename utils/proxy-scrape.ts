@@ -1,6 +1,6 @@
 // code from https://www.npmjs.com/package/simple-proxy-scraper
 
-const request = require('request-promise');
+import request from 'request-promise';
 
 const apiRoot = 'https://api.proxyscrape.com/';
 const proxyTypes = ['http', 'socks4', 'socks5', 'all'];
@@ -85,4 +85,4 @@ class ProxyScrapeAPI {
     }
 }
 
-module.exports = new ProxyScrapeAPI();
+export = new ProxyScrapeAPI();

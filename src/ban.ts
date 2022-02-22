@@ -4,11 +4,11 @@
     player's nick in order to effectively ban them from joining the server.
 
     ================================== 7b7t ==================================
-    7b had no reconnection cooldown if the player was online, so the bot could
+    7b had no reconnection cool down if the player was online, so the bot could
     instantly try to reconnect to the server, maximising chances of connecting
     at just the right time to join the server and stop the player from joining.
 
-    also 7b had a 1m auth timeout, after which you get kicked for not logging
+    Also, 7b had a 1m auth timeout, after which you get kicked for not logging
     in before the timeout ended.
     bot usually took about 1s to join the server.
 

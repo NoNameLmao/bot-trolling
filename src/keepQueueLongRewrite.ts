@@ -1,87 +1,88 @@
 import "colors";
-import { Client } from "minecraft-protocol";
+import {Client, createClient} from "minecraft-protocol";
+import wt from "worker_threads";
+import prismarine_chat from "prismarine-chat";
+import os from "os";
+import {SocksClient} from "socks";
+import {getRandomArbitrary, sleep} from "emberutils";
 
-const wt = require('worker_threads');
-const { createClient } = require('minecraft-protocol');
-const { fromNotch } = require('prismarine-chat')('1.12.2');
-const os = require('os');
-const { SocksClient } = require('socks');
-const { sleep, getRandomArbitrary } = require('emberutils');
+const {fromNotch} = prismarine_chat('1.12.2');
 
-(async() => {
-        function log(text) {
-            if (wt.isMainThread) {
-                console.log(`[${'M0'.green}] [${new Date().toLocaleString()}] ${text}`);
-            } else {
-                wt.parentPort.postMessage({
-                    date: new Date().getTime(),
-                    displayDate: new Date().toLocaleString(),
-                    id: process.argv[3],
-                    log: {
-                        message: text,
-                    },
-                });
-            }
-        }
-        const amount = {
-            workers: 10,
-            bots: 5,
-        };
-        const useProxy = false;
-        const useTimeout = false;
-
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const
-                    j = Math.floor(Math.random() * (i + 1)),
-                    temp = array[i];
-
-                array[i] = array[j];
-                array[j] = temp;
-            }
-        }
-
+(async () => {
+    function log(text) {
         if (wt.isMainThread) {
-            log('Starting...'.green);
-            log(`Amount of workers: ${amount.workers}`.green);
-            log('Importing usernames...'.green);
-            const bots = require('../bots.json');
-            log(`Amount of usernames: ${bots.length}, will use ${amount.bots * amount.workers} of them`.green);
-            log('Shuffling bots array...'.green);
-            shuffleArray(bots);
-            log('Decreasing the process priority...'.green);
-            os.setPriority(19);
-            log('Starting worker spawning loop...'.green);
-            const array = [];
-            const wtArray = [];
-            for (let i = 0; i < amount.workers; i++) {
-                let nickname;
-                for (let j = 0; j < amount.bots; j++) {
-                    if (j === 0) nickname = bots[0].username;
-                    else {
-                        bots.shift();
-                        shuffleArray(bots);
-                        nickname = bots[0].username;
-                    }
-                    array.push(nickname);
-                    log(`Username ${nickname} ready`.green);
+            console.log(`[${'M0'.green}] [${new Date().toLocaleString()}] ${text}`);
+        } else {
+            wt.parentPort.postMessage({
+                date: new Date().getTime(),
+                displayDate: new Date().toLocaleString(),
+                id: process.argv[3],
+                log: {
+                    message: text,
+                },
+            });
+        }
+    }
+
+    const amount = {
+        workers: 10,
+        bots: 5,
+    };
+    const useProxy = false;
+    const useTimeout = false;
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const
+                j = Math.floor(Math.random() * (i + 1)),
+                temp = array[i];
+
+            array[i] = array[j];
+            array[j] = temp;
+        }
+    }
+
+    if (wt.isMainThread) {
+        log('Starting...'.green);
+        log(`Amount of workers: ${amount.workers}`.green);
+        log('Importing usernames...'.green);
+        const bots = require('../bots.json');
+        log(`Amount of usernames: ${bots.length}, will use ${amount.bots * amount.workers} of them`.green);
+        log('Shuffling bots array...'.green);
+        shuffleArray(bots);
+        log('Decreasing the process priority...'.green);
+        os.setPriority(19);
+        log('Starting worker spawning loop...'.green);
+        const array = [];
+        const wtArray = [];
+        for (let i = 0; i < amount.workers; i++) {
+            let nickname;
+            for (let j = 0; j < amount.bots; j++) {
+                if (j === 0) nickname = bots[0].username;
+                else {
+                    bots.shift();
+                    shuffleArray(bots);
+                    nickname = bots[0].username;
                 }
-                const worker = new wt.Worker(__filename, { argv: [array, i] });
-                wtArray.push(worker);
-                log(`Summoned worker number ${i + 1}... (${amount.workers - i - 1} left)`.green);
-                worker.on('message', message => { // jshint ignore:line
-                            const delay = (new Date().getTime() - message.date) / 1000;
-                            let delayString: string;
-                            if (delay > 1 && delay < 5) delayString = `${delay}s ago`.yellow;
-                            else if (delay > 5) delayString = `${delay}s ago`.red;
-                            else if (delay === 0.000) delayString = `${delay}s ago`.bgGreen;
-                            else delayString = `${delay}s ago`.green;
-                            if (message.log) {
-                                console.log(`[${`W${message.id}`.yellow}] [${message.displayDate} (${delayString})] ${message.log.message}`);
+                array.push(nickname);
+                log(`Username ${nickname} ready`.green);
+            }
+            const worker = new wt.Worker(__filename, {argv: [array, i]});
+            wtArray.push(worker);
+            log(`Summoned worker number ${i + 1}... (${amount.workers - i - 1} left)`.green);
+            worker.on('message', message => { // jshint ignore:line
+                const delay = (new Date().getTime() - message.date) / 1000;
+                let delayString: string;
+                if (delay > 1 && delay < 5) delayString = `${delay}s ago`.yellow;
+                else if (delay > 5) delayString = `${delay}s ago`.red;
+                else if (delay === 0.000) delayString = `${delay}s ago`.bgGreen;
+                else delayString = `${delay}s ago`.green;
+                if (message.log) {
+                    console.log(`[${`W${message.id}`.yellow}] [${message.displayDate} (${delayString})] ${message.log.message}`);
                 }
             });
         }
-        wtArray.forEach(worker => worker.postMessage({ ready: true }));
+        wtArray.forEach(worker => worker.postMessage({ready: true}));
     } else {
         await (async () => {
             function awaitReady() {

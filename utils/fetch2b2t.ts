@@ -1,5 +1,4 @@
-const fetch = require('node-fetch');
-const fs = require('fs').promises;
+import {promises as fs} from "fs";
 
 (async () => {
     log('Fetching player data...');
@@ -10,7 +9,7 @@ const fs = require('fs').promises;
     const players = await res.json();
 
     log('Reading bots.json...');
-    const bots = await fs.readFile('bots.json', { encoding: 'utf8' });
+    const bots = await fs.readFile('bots.json', {encoding: 'utf8'});
 
     log('Parsing bots.json into json...');
     /** @type {{ username: string }[]} */
@@ -19,7 +18,7 @@ const fs = require('fs').promises;
     log('Filtering fetched players...');
     // see the filtering rule function at the end of the file
     players.filter(filterRule);
-    for (const player of players) json.push({'username': player.username });
+    for (const player of players) json.push({'username': player.username});
 
     log('Writing results to bots.json...');
     await fs.writeFile('bots.json', JSON.stringify(json, null, 4));
@@ -27,9 +26,9 @@ const fs = require('fs').promises;
 
     function filterRule(player) {
         return player.username !== 'NoNameLmao' &&
-        player.username !== 'Qbasty' &&
-        player.username !== 'Pistonmaster' &&
-        !json.some(bot => bot.username === player.username);
+            player.username !== 'Qbasty' &&
+            player.username !== 'Pistonmaster' &&
+            !json.some(bot => bot.username === player.username);
     }
 })();
 

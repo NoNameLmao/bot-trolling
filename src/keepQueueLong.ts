@@ -1,10 +1,10 @@
 import 'colors'
-const wt = require('worker_threads'),
-    { createBot } = require('mineflayer'),
-    os = require('os'),
-    { SocksClient } = require('socks'),
-    { sleep, getRandomArbitrary, shuffleArray } = require('emberutils'),
-    ProxyScraper = require('../utils/proxy-scrape');
+import wt from "worker_threads";
+import {createBot} from "mineflayer";
+import os from "os";
+import {SocksClient} from "socks";
+import {getRandomArbitrary, shuffleArray, sleep} from "emberutils";
+import ProxyScraper from "../utils/proxy-scrape";
 
 (async () => {
     function log(text) {
