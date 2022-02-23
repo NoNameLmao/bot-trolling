@@ -17,8 +17,9 @@
 */
 
 import 'colors'
-import { Bot, createBot } from 'mineflayer'
+import { Bot } from 'mineflayer'
 import { server, username, port } from '../config.json'
+import {createAttackBot, log } from './shared'
 
 let bot: Bot | null
 process.on('uncaughtException', exception => {
@@ -41,7 +42,7 @@ troll()
 function troll (): void {
   log('[Bot] Logging in...'.yellow)
   // create the bot
-  bot = createBot({
+  bot = createAttackBot({
     host: server,
     port: port,
     username: username
@@ -72,9 +73,4 @@ function troll (): void {
   bot.on('messagestr', message => {
     log(message.cyan)
   })
-}
-
-function log (text: string): void {
-  // fancy logging
-  console.log(`[${new Date().toISOString()}] ${text}`)
 }

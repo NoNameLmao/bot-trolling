@@ -5,23 +5,10 @@ import prismarine_chat from 'prismarine-chat'
 import os from 'os'
 import { SocksClient } from 'socks'
 import { getRandomArbitrary, sleep } from 'emberutils'
+import {createAttackBot, log} from './shared'
+import {port} from "../config.json";
 
 const { fromNotch } = prismarine_chat('1.12.2')
-
-function log (text: string) {
-  if (wt.isMainThread) {
-    console.log(`[${'M0'.green}] [${new Date().toLocaleString()}] ${text}`)
-  } else {
-    wt.parentPort!.postMessage({
-      date: new Date().getTime(),
-      displayDate: new Date().toLocaleString(),
-      id: process.argv[3],
-      log: {
-        message: text
-      }
-    })
-  }
-}
 
 const amount = {
   workers: 10,
@@ -108,6 +95,7 @@ if (wt.isMainThread) {
           log(`[${username}] Waiting for ${timeout / 1000}s before logging in...`)
           await sleep(timeout)
         }
+
         if (useProxy) {
           return createClient({
             username,
