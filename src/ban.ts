@@ -18,7 +18,7 @@
 
 import 'colors'
 import { Bot } from 'mineflayer'
-import { server, username, port } from '../config.json'
+import { host, username, port } from '../config.json'
 import {createAttackBot, log } from './shared'
 
 let bot: Bot | null
@@ -43,7 +43,7 @@ function troll (): void {
   log('[Bot] Logging in...'.yellow)
   // create the bot
   bot = createAttackBot({
-    host: server,
+    host: host,
     port: port,
     username: username
   })
