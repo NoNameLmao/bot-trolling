@@ -17,12 +17,7 @@ interface OptionType {
   averagetimeout?: number
 }
 
-/**
- * Parse options into a string of parameters for the api request.
- * @param options The options object.
- * @returns String of parameters parsed from the options
- */
-function returnParamString (options: OptionType) {
+function returnParamString (options: OptionType): string {
   let paramString = ''
   if (options.proxytype && proxyTypes.includes(options.proxytype.toLowerCase())) {
     paramString += `&proxytype=${options.proxytype.toLowerCase()}`
@@ -49,35 +44,32 @@ function returnParamString (options: OptionType) {
 }
 
 class ProxyScrapeAPI {
-  /**
-     * It does exactly what you think it does.
-     * @param options The options object.
-     * @returns {string[]} Array of proxies
-     */
-  async getProxies (options: OptionType) {
+  async getProxies (options: OptionType): Promise<string[]> {
     const reqUrl = `${apiRoot}?request=displayproxies${returnParamString(options)}`
     const response = await request.get(reqUrl, {
       resolveWithFullResponse: true
     })
     /** @type {string} */
-    const { body } = await response
-    const proxies = body
+    const { body }: {body: string} = await response
+    const proxies: string[] = body
       .split('\n')
-      .map(line => {
+      .map((line: string) => {
         if (line.length > 5) {
           return line.replace('\r', '')
+        } else {
+            return line
         }
       })
     return proxies.filter(Boolean)
   }
 
-  async getAmountProxies (options) {
+  async getAmountProxies (options: OptionType): Promise<number> {
     const reqUrl = `${apiRoot}?request=amountproxies${returnParamString(options)}`
     const res = await request.get(reqUrl, {
       resolveWithFullResponse: true
     })
-    const { body } = await res
-    return body
+    const { body }: {body: string} = await res
+    return parseInt(body)
   }
 }
 

@@ -18,17 +18,19 @@
 
 import 'colors'
 import { Bot, createBot } from 'mineflayer'
-import { server, username } from '../config.json'
+import { server, username, port } from '../config.json'
 
-let bot: Bot
+let bot: Bot | null
 process.on('uncaughtException', exception => {
+  if (bot == null) return
+
   if (exception.message.includes('ECONNRESET')) {
     log('ECONNRESET'.red)
     // end connection properly
     bot.end()
     // attempt to fix memory leaks
     bot.removeAllListeners()
-    bot = undefined
+    bot = null
     // reconnect
     troll()
   }
@@ -36,28 +38,31 @@ process.on('uncaughtException', exception => {
 log('Started'.green)
 troll()
 
-function troll () {
+function troll (): void {
   log('[Bot] Logging in...'.yellow)
   // create the bot
   bot = createBot({
     host: server,
+    port: port,
     username: username
   })
   // parse kick reason if kicked
   bot.once('kicked', async reason => {
+    if (bot == null) return
+
     if (reason.includes('You are already connected to this proxy!')) {
       // player is online
       log('[Bot] Kicked - target is online.'.red)
       bot.end()
       bot.removeAllListeners()
-      bot = undefined
+      bot = null
       troll()
     } else if (reason.includes('You took to long to login or register')) {
       // auth timeout
       log('[Bot] Kicked - authentication timeout.'.red)
       bot.end()
       bot.removeAllListeners()
-      bot = undefined
+      bot = null
       troll()
     } else log(reason)
   })
@@ -69,7 +74,7 @@ function troll () {
   })
 }
 
-function log (text: string) {
+function log (text: string): void {
   // fancy logging
   console.log(`[${new Date().toISOString()}] ${text}`)
 }

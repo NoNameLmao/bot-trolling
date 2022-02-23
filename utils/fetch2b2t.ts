@@ -1,19 +1,32 @@
 import { promises as fs } from 'fs';
 
+interface PlayerResponse {
+  id: number,
+  username: string,
+  uuid: string,
+  kills: number,
+  deaths: number,
+  joins: number,
+  leaves: number,
+  adminLevel: number
+}
+
+interface BotEntry {
+  username: string
+}
+
 (async () => {
   log('Fetching player data...')
   const res = await fetch('https://api.2b2t.dev/stats?username=all')
 
   log('Parsing fetched player data to json...')
-  /** @type {{ id: number, username: string, uuid: string, kills: number, deaths: number, joins: number, leaves: number, adminLevel: number }[]} */
-  const players = await res.json()
+  const players: PlayerResponse[] = await res.json()
 
   log('Reading bots.json...')
   const bots = await fs.readFile('bots.json', { encoding: 'utf8' })
 
   log('Parsing bots.json into json...')
-  /** @type {{ username: string }[]} */
-  const json = JSON.parse(bots)
+  const json: BotEntry[] = JSON.parse(bots)
 
   log('Filtering fetched players...')
   // see the filtering rule function at the end of the file
@@ -24,7 +37,7 @@ import { promises as fs } from 'fs';
   await fs.writeFile('bots.json', JSON.stringify(json, null, 4))
   log('Finished')
 
-  function filterRule (player) {
+  function filterRule (player: PlayerResponse) {
     return player.username !== 'NoNameLmao' &&
             player.username !== 'Qbasty' &&
             player.username !== 'Pistonmaster' &&
@@ -32,6 +45,6 @@ import { promises as fs } from 'fs';
   }
 })()
 
-function log (string) {
+function log (string: string) {
   console.log(`[${new Date().toISOString()}] ${string}`)
 }

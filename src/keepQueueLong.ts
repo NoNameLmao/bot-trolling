@@ -1,13 +1,14 @@
 import 'colors'
 import wt from 'worker_threads'
-import { Bot, createBot } from 'mineflayer'
+import { Bot, createBot as createMinecraftBot } from 'mineflayer'
 import os from 'os'
 import { SocksClient } from 'socks'
 import { getRandomArbitrary, shuffleArray, sleep } from 'emberutils'
 import ProxyScraper from '../utils/proxy-scrape'
+import { server, username } from '../config.json'
 
-function log (text) {
-  if (wt.isMainThread) {
+function log (text: string) {
+  if (wt.isMainThread || wt.parentPort == null) {
     console.log(`[${'M0'.green}] [${new Date().toLocaleString()}] ${text}`)
   } else {
     wt.parentPort.postMessage({
@@ -78,10 +79,10 @@ if (wt.isMainThread) {
     // function to wait until all workers are ready and main thread sends the message to start
     async function awaitReady () {
       return await new Promise<void>(resolve => {
-        wt.parentPort.once('message', async message => {
+        wt.parentPort!.once('message', async message => {
           // if message object's ready property is "true", resolve
           if (message.ready) resolve()
-          // otherwise keep waiting
+          // otherwise, keep waiting
           else await awaitReady()
         })
       })
@@ -92,15 +93,15 @@ if (wt.isMainThread) {
     let proxyI = 0
     const spaceRegex = /\s{2,}/gm
     const array = process.argv[2].split(',')
-    const host = '8b8t.me'
+    const host = server
     const port = 25565
     shuffleArray(array)
-    let bot: Bot
+
     const proxyArray = shuffleArray(process.argv[4].split(','))
     for (const username of array) {
       proxyI++
 
-      async function createaBot () {
+      async function createBot (): Promise<Bot> {
         // join with random delay
         if (useTimeout) {
           // random time in range from 5s to 200s
@@ -111,7 +112,7 @@ if (wt.isMainThread) {
         }
         // if using proxies
         if (useProxy) {
-          bot = createBot({
+          return createMinecraftBot({
           // minimise render distance for less ram usage
             viewDistance: 'tiny',
             username: username,
@@ -122,9 +123,7 @@ if (wt.isMainThread) {
             connect: (client) => {
               SocksClient.createConnection({
                 proxy: {
-                // ip
                   host: proxyArray[proxyI].split(':')[0],
-                  // port
                   port: parseInt(proxyArray[proxyI].split(':')[1]),
                   type: 5
                 },
@@ -133,39 +132,34 @@ if (wt.isMainThread) {
                   host: host,
                   port: port
                 }
-              }, (err, info) => {
-              // PROXY ERRORS
-                if (err) {
-                // connection times out
-                  if (err.toString().includes('ETIMEDOUT') || err.toString().includes('Proxy connection timed out')) log(`[${username}] Proxy timed out`.bgRed)
-                  // closed socket
-                  else if (err.toString().includes('Socket closed')) log(`[${username}] Proxy socket closed`.bgRed)
-                  // reset connection
-                  else if (err.toString().includes('ECONNRESET')) log(`[${username}] Proxy connection reset`.bgRed)
-                  // connection refused
-                  else if (err.toString().includes('ECONNREFUSED') || err.toString().includes('ConnectionRefused')) log(`[${username}] Proxy connection refused`.bgRed)
-                  // proxy auth failed (if proxy is protected by username:password)
-                  else if (err.toString().includes('Authentication failed')) log(`[${username}] Proxy authentication failed`.bgRed)
-                  // not socks5
-                  else if (err.toString().includes('Received invalid Socks5 initial handshake')) log(`[${username}] Received invalid Socks5 initial handshake`.bgRed)
-                  // 7b7t issue
-                  else if (err.toString().includes('HostUnreachable')) log(`[${username}] Host unreachable`.bgRed)
-                  // i forgot when this happens 💀
-                  else if (err.toString().includes('Failure')) log(`[${username}] Failure`.bgRed)
-                  // unknown error
-                  else console.log(err)
-                  return
-                }
+              }).then((info) => {
                 client.setSocket(info.socket)
                 client.emit('connect')
+              }).catch(err => {
+                // connection times out
+                if (err.toString().includes('ETIMEDOUT') || err.toString().includes('Proxy connection timed out')) log(`[${username}] Proxy timed out`.bgRed)
+                // closed socket
+                else if (err.toString().includes('Socket closed')) log(`[${username}] Proxy socket closed`.bgRed)
+                // reset connection
+                else if (err.toString().includes('ECONNRESET')) log(`[${username}] Proxy connection reset`.bgRed)
+                // connection refused
+                else if (err.toString().includes('ECONNREFUSED') || err.toString().includes('ConnectionRefused')) log(`[${username}] Proxy connection refused`.bgRed)
+                // proxy auth failed (if proxy is protected by username:password)
+                else if (err.toString().includes('Authentication failed')) log(`[${username}] Proxy authentication failed`.bgRed)
+                // not socks5
+                else if (err.toString().includes('Received invalid Socks5 initial handshake')) log(`[${username}] Received invalid Socks5 initial handshake`.bgRed)
+                // 7b7t issue
+                else if (err.toString().includes('HostUnreachable')) log(`[${username}] Host unreachable`.bgRed)
+                // I forgot when this happens 💀
+                else if (err.toString().includes('Failure')) log(`[${username}] Failure`.bgRed)
+                // unknown error
+                else console.log(err)
               })
             },
             loadInternalPlugins: false
           })
-        }
-        // else
-        else if (!useProxy) {
-          bot = createBot({
+        } else {
+          return createMinecraftBot({
             viewDistance: 'tiny',
             username: username,
             host: host,
@@ -177,17 +171,17 @@ if (wt.isMainThread) {
 
       i++
       log(`[${i}/${array.length}] Creating bot ${username}... (${array.length - i} left)`.green)
-      await createaBot()
+      let bot = await createBot()
 
       function botThing () {
         log(`[${username}] Logged in`.green)
         bot.once('messagestr', async function botThing2 (message) {
           if (message === '' || message === ' ' || message === '\u200b' || !message || spaceRegex.test(message)) return
           log(`[${username}] ${message}`.yellow)
-          if (message.includes('7b7t')) {
+          if (message.includes('8b8t')) {
             log(`[${username}] Reached the end of the queue, ending the connection and reconnecting...`.green)
             bot.end()
-            await createaBot()
+            await createBot()
             bot.once('login', () => {
               bot.removeAllListeners('messagestr')
               botThing()
@@ -200,7 +194,7 @@ if (wt.isMainThread) {
           log(`[${username}] ${reason.red}`.yellow + ', recreating the bot...')
           log(`[${username}] Recreating the bot...`.green)
           bot.end()
-          createaBot()
+          createBot()
           bot.once('login', () => {
             bot.removeAllListeners()
             botThing()

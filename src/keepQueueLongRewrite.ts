@@ -8,11 +8,11 @@ import { getRandomArbitrary, sleep } from 'emberutils'
 
 const { fromNotch } = prismarine_chat('1.12.2')
 
-function log (text) {
+function log (text: string) {
   if (wt.isMainThread) {
     console.log(`[${'M0'.green}] [${new Date().toLocaleString()}] ${text}`)
   } else {
-    wt.parentPort.postMessage({
+    wt.parentPort!.postMessage({
       date: new Date().getTime(),
       displayDate: new Date().toLocaleString(),
       id: process.argv[3],
@@ -30,7 +30,7 @@ const amount = {
 const useProxy = false
 const useTimeout = false
 
-function shuffleArray (array) {
+function shuffleArray (array: any[]) {
   for (let i = array.length - 1; i > 0; i--) {
     const
       j = Math.floor(Math.random() * (i + 1))
@@ -86,7 +86,7 @@ if (wt.isMainThread) {
   await (async () => {
     async function awaitReady () {
       return await new Promise<void>(resolve => {
-        wt.parentPort.once('message', async message => {
+        wt.parentPort!.once('message', async message => {
           if (message.ready) resolve()
           else await awaitReady()
         })
@@ -95,23 +95,21 @@ if (wt.isMainThread) {
 
     await awaitReady()
     let i = 0
-    const
-      queueRegex = /(?<=Position in queue: )\d+/gm
+    const queueRegex = /(?<=Position in queue: )\d+/gm
     const spaceRegex = /\s{2,}/gm
     const array = process.argv[2].split(',')
     const { host, port } = require('../servers/servers.json')['7b7t']
 
     shuffleArray(array)
-    let bot: Client
     for (const username of array) {
-      async function createBot () {
+      async function createBot (): Promise<Client> {
         if (useTimeout) {
           const timeout = getRandomArbitrary(5000, 200000)
           log(`[${username}] Waiting for ${timeout / 1000}s before logging in...`)
           await sleep(timeout)
         }
         if (useProxy) {
-          bot = createClient({
+          return createClient({
             username,
             host: host,
             port: port,
@@ -128,22 +126,20 @@ if (wt.isMainThread) {
                   host: host,
                   port: port
                 }
-              }, (err, info) => {
-                if (err) {
-                  if (err.toString().includes('ETIMEDOUT')) {
-                    log(`[${username}] Proxy timed out`.red)
-                  } else if (err.toString().includes('Socket closed')) {
-                    log(`[${username}] Proxy socket closed`.red)
-                  } else console.log(err)
-                  return
-                }
+              }).then((info) => {
                 client.setSocket(info.socket)
                 client.emit('connect')
+              }).catch((err) => {
+                if (err.toString().includes('ETIMEDOUT')) {
+                  log(`[${username}] Proxy timed out`.red)
+                } else if (err.toString().includes('Socket closed')) {
+                  log(`[${username}] Proxy socket closed`.red)
+                } else console.log(err)
               })
             }
           })
-        } else if (!useProxy) {
-          bot = createClient({
+        } else {
+          return createClient({
             username,
             host,
             port,
@@ -154,7 +150,7 @@ if (wt.isMainThread) {
 
       i++
       log(`[${i}/${array.length}] Creating bot ${username}... (${array.length - i} left)`.green)
-      await createBot()
+      let bot = await createBot()
 
       function botThing () {
         log(`[${username}] Logged in`.green)
