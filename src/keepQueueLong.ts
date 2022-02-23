@@ -171,7 +171,7 @@ if (wt.isMainThread) {
 
       i++
       log(`[${i}/${array.length}] Creating bot ${username}... (${array.length - i} left)`.green)
-      let bot = await createBot()
+      const bot = await createBot()
 
       function botThing () {
         log(`[${username}] Logged in`.green)

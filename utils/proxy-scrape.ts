@@ -57,7 +57,7 @@ class ProxyScrapeAPI {
         if (line.length > 5) {
           return line.replace('\r', '')
         } else {
-            return line
+          return line
         }
       })
     return proxies.filter(Boolean)

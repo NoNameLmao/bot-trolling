@@ -1,13 +1,13 @@
-import { promises as fs } from 'fs';
+import { promises as fs } from 'fs'
 
 interface PlayerResponse {
-  id: number,
-  username: string,
-  uuid: string,
-  kills: number,
-  deaths: number,
-  joins: number,
-  leaves: number,
+  id: number
+  username: string
+  uuid: string
+  kills: number
+  deaths: number
+  joins: number
+  leaves: number
   adminLevel: number
 }
 
