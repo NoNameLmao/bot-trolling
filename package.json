@@ -5,7 +5,7 @@
   "main": "src/ban.ts",
   "scripts": {
     "ban": "node -r ts-node/register src/ban.ts",
-    "keepQueueLong": "node -r ts-node/register src/keepQueueLong.ts",
+    "keepQueueLong": "node -r ts-node/register src/attack.ts",
     "lint": "ts-standard",
     "fix": "ts-standard --fix"
   },

