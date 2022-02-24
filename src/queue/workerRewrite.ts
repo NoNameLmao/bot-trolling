@@ -1,5 +1,5 @@
-import { parentPort, workerData } from 'worker_threads'
-import { QueueLongProcessArgs } from './types'
+import { parentPort, workerData as anyWorkerData } from 'worker_threads'
+import { QueueAttackOptions } from './types'
 import 'colors'
 import { getRandomArbitrary, sleep } from 'emberutils'
 import { Client, createClient } from 'minecraft-protocol'
@@ -13,7 +13,7 @@ const {fromNotch} = chatInstance
 const queueRegex = /(?<=Position in queue: )\d+/gm
 const spaceRegex = /\s{2,}/gm
 
-const workerOptions: QueueLongProcessArgs = workerData
+const workerOptions: QueueAttackOptions = anyWorkerData
 
 async function awaitReady () {
   return await new Promise<void>(resolve => {
@@ -34,19 +34,18 @@ async function main () {
   let i = 0
   for (const username of usernames) {
     async function createBot (): Promise<Client> {
-      if (workerData.useTimeout) {
+      if (workerOptions.useTimeout) {
         const timeout = getRandomArbitrary(5000, 200000)
         log(`[${username}] Waiting for ${timeout / 1000}s before logging in...`)
         await sleep(timeout)
       }
 
-      if (workerData.useProxy) {
         return createClient({
           username: username,
-          host: workerData.host,
-          port: workerData.port,
+          host: workerOptions.host,
+          port: workerOptions.port,
           version: '1.12.2',
-          connect: (client) => {
+          connect: workerOptions.proxy ? (client) => {
             SocksClient.createConnection({
               proxy: {
                 host: '94.231.144.114',
@@ -55,8 +54,8 @@ async function main () {
               },
               command: 'connect',
               destination: {
-                host: workerData.host,
-                port: workerData.port
+                host: workerOptions.host,
+                port: workerOptions.port
               }
             }).then((info) => {
               client.setSocket(info.socket)
@@ -68,16 +67,8 @@ async function main () {
                 log(`[${username}] Proxy socket closed`.red)
               } else console.log(err)
             })
-          }
+          } : undefined
         })
-      } else {
-        return createClient({
-          username: username,
-          host: workerData.host,
-          port: workerData.port,
-          version: '1.12.2'
-        })
-      }
     }
 
     i++

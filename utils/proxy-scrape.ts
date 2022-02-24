@@ -7,7 +7,7 @@ const proxyTypes = ['http', 'socks4', 'socks5', 'all']
 const anonimityTypes = ['elite', 'anonymous', 'transparent', 'all']
 const sslTypes = ['yes', 'no', 'all']
 
-interface OptionType {
+export interface OptionType {
   proxytype?: 'http' | 'socks4' | 'socks5' | 'all'
   timeout?: number
   anonimity?: 'elite' | 'anonymous' | 'transparent' | 'all'
@@ -43,8 +43,8 @@ function returnParamString (options: OptionType): string {
   return paramString
 }
 
-class ProxyScrapeAPI {
-  async getProxies (options: OptionType): Promise<string[]> {
+export class ProxyScrapeAPI {
+  static async getProxies (options: OptionType): Promise<string[]> {
     const reqUrl = `${apiRoot}?request=displayproxies${returnParamString(options)}`
     const response = await request.get(reqUrl, {
       resolveWithFullResponse: true
@@ -63,7 +63,7 @@ class ProxyScrapeAPI {
     return proxies.filter(Boolean)
   }
 
-  async getAmountProxies (options: OptionType): Promise<number> {
+  static async getAmountProxies (options: OptionType): Promise<number> {
     const reqUrl = `${apiRoot}?request=amountproxies${returnParamString(options)}`
     const res = await request.get(reqUrl, {
       resolveWithFullResponse: true
@@ -72,5 +72,3 @@ class ProxyScrapeAPI {
     return parseInt(body)
   }
 }
-
-export = new ProxyScrapeAPI()

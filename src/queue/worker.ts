@@ -1,8 +1,8 @@
-import { parentPort, workerData } from 'worker_threads'
+import { parentPort, workerData as anyWorkerData } from 'worker_threads'
 import { getRandomArbitrary, shuffleArray, sleep } from 'emberutils'
 import { Bot } from 'mineflayer'
 import { createAttackBot, log } from '../shared'
-import { QueueLongProcessArgs } from './types'
+import { QueueAttackOptions } from './types'
 import 'colors'
 
 (async () => {
@@ -22,7 +22,7 @@ import 'colors'
 
   let proxyI = 0
   const spaceRegex = /\s{2,}/gm
-  const queueOptions: QueueLongProcessArgs = workerData
+  const queueOptions: QueueAttackOptions = anyWorkerData
   const usernames = queueOptions.usernames
   let i = queueOptions.workerNumber
   shuffleArray(usernames)
@@ -45,7 +45,7 @@ import 'colors'
         username: username,
         host: queueOptions.host,
         port: queueOptions.port,
-        proxy: queueOptions.useProxy
+        proxy: queueOptions.proxy
           ? {
               proxyHost: proxyArray[proxyI].split(':')[0],
               proxyPort: parseInt(proxyArray[proxyI].split(':')[1])
