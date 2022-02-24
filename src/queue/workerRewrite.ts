@@ -5,6 +5,10 @@ import { getRandomArbitrary, sleep } from 'emberutils'
 import { Client, createClient } from 'minecraft-protocol'
 import { SocksClient } from 'socks'
 import { log, shuffle } from '../shared'
+import prismarineChat from "prismarine-chat";
+
+const chatInstance = prismarineChat('1.12')
+const {fromNotch} = chatInstance
 
 const queueRegex = /(?<=Position in queue: )\d+/gm
 const spaceRegex = /\s{2,}/gm
@@ -24,7 +28,6 @@ async function main () {
   await awaitReady()
 
   const usernames = workerOptions.usernames
-  log(usernames.toString())
 
   shuffle(usernames)
 
@@ -84,8 +87,12 @@ async function main () {
 
     function botLoginHandler () {
       log(`[${username}] Logged in`.green)
-      bot.on('chat', async function messageHandler (message: string) {
+      bot.on('chat', async function messageHandler (packet: any) {
+        const object = fromNotch(packet.message);
+        const message = object.toString()
+
         if (message === '' || message === ' ' || message === '\u200b' || !message || spaceRegex.test(message)) return
+
         log(`[${username}] ${message}`.yellow)
         if (message.includes('7b7t')) {
           log(`[${username}] Reached the end of the queue, ending the connection and reconnecting...`.green)

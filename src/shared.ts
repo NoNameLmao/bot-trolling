@@ -1,6 +1,7 @@
 import { Bot, createBot as createMinecraftBot } from 'mineflayer'
 import { SocksClient } from 'socks'
-import { parentPort, isMainThread } from 'worker_threads'
+import { parentPort, isMainThread, workerData } from 'worker_threads'
+import {QueueLongProcessArgs} from "./queue/types";
 
 export function createAttackBot ({ username, host, port, proxy }:
 {
@@ -90,10 +91,12 @@ export function log (text: string) {
   if (isMainThread) {
     console.log(`[${'M0'.green}] [${new Date().toLocaleString()}] ${text}`)
   } else {
+    const data: QueueLongProcessArgs = workerData
+    const date = new Date()
     parentPort!.postMessage({
-      date: new Date().getTime(),
-      displayDate: new Date().toLocaleString(),
-      id: process.argv[3], // TODO
+      date: date.getTime(),
+      displayDate: date.toLocaleString(),
+      id: data.workerNumber,
       log: { message: text }
     })
   }
