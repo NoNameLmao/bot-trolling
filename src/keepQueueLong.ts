@@ -1,9 +1,9 @@
 import 'colors'
-import {Worker} from 'worker_threads'
+import { Worker } from 'worker_threads'
 import os from 'os'
-import {log, shuffle} from './shared'
-import {QueueLongProcessArgs} from "./queue/types";
-import {host, port} from '../config.json'
+import { log, shuffle } from './shared'
+import { QueueLongProcessArgs } from './queue/types'
+import { host, port } from '../config.json'
 
 const amount = {
   workers: 2,
@@ -19,7 +19,7 @@ const highPriority = false
 log('Starting...'.green)
 log(`Amount of workers: ${amount.workers}`.green)
 log('Importing usernames...'.green)
-const bots: { username: string }[] = require('../bots.json')
+const bots: Array<{ username: string }> = require('../bots.json')
 
 log(`Amount of usernames: ${bots.length}, will use ${amount.bots * amount.workers} of them`.green)
 log('Shuffling bots array...'.green)
@@ -29,7 +29,7 @@ log('Changing the process priority...'.green)
 os.setPriority(highPriority ? -10 : 19)
 
 log('Starting worker spawning loop...'.green)
-const wtArray: Worker[] = []
+const workerArray: Worker[] = []
 for (let i = 0; i < amount.workers; i++) {
   const nicknames: string[] = []
   let nickname: string
@@ -47,14 +47,25 @@ for (let i = 0; i < amount.workers; i++) {
   const workerData: QueueLongProcessArgs = {
     useProxy: useProxy,
     useTimeout: useTimeout,
-    botNumber: i,
+    workerNumber: i,
     usernames: nicknames,
     host,
     port
   }
 
-  const worker = new Worker(file, {argv: [JSON.stringify(workerData), i]})
-  wtArray.push(worker)
+  const worker = new Worker(file, {
+    workerData: workerData
+  })
+
+  worker.on('error', error => {
+    console.log(error)
+  })
+  worker.on('exit', (code) => {
+    if (code !== 0) { console.log(new Error(`Worker stopped with exit code ${code}`)) }
+  })
+
+  workerArray.push(worker)
+
   log(`Summoned worker number ${i + 1}... (${amount.workers - i - 1} left)`.green)
   worker.on('message', message => {
     const delay = (new Date().getTime() - message.date) / 1000
@@ -71,4 +82,4 @@ for (let i = 0; i < amount.workers; i++) {
   })
 }
 
-wtArray.forEach(worker => worker.postMessage({ready: true}))
+workerArray.forEach(worker => worker.postMessage({ ready: true }))

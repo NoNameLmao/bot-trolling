@@ -19,7 +19,7 @@
 import 'colors'
 import { Bot } from 'mineflayer'
 import { host, username, port } from '../config.json'
-import {createAttackBot, log } from './shared'
+import { createAttackBot, log } from './shared'
 
 let bot: Bot | null
 process.on('uncaughtException', exception => {
