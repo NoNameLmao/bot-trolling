@@ -2,17 +2,20 @@ import 'colors'
 import { Worker } from 'worker_threads'
 import os from 'os'
 import { log, shuffle } from './shared'
-import { ProxyType, AttackOptions } from '../utils/types'
+import {ProxyType, AttackOptions, ProxySource} from '../utils/types'
 import { host, port } from '../config.json'
 import { ProxyScrapeAPI } from '../utils/proxy-scrape'
+import fs from 'fs'
+import ProxyAgent from "proxy-agent";
 
 const amount = {
-  workers: 5,
-  bots: 15
+  workers: 2,
+  bots: 5
 }
 
-const module = './src/queue/worker.ts'
+const moduleFile = './src/queue/worker.ts'
 const useProxy = true
+const proxySource: ProxySource = 'txt'
 const useTimeout = false
 
 const highPriority = false
@@ -36,20 +39,39 @@ async function main () {
   const proxies: ProxyType[] = []
   if (useProxy) {
     log('Collecting proxies...'.green)
-    const temp = await ProxyScrapeAPI.getProxies({ proxytype: 'socks5', country: 'DE' })
-    for (const proxy of temp) {
-      const slice = proxy.split(':')
-      proxies.push({
-        host: slice[0],
-        port: parseInt(slice[1])
-      })
+    switch (proxySource) {
+      case 'txt':
+        fs.readFileSync('./proxies.txt').toString().split('\n').forEach(proxy => {
+          if (proxy.length > 0) {
+            const split = proxy.split(':')
+            proxies.push({
+              host: split[0],
+              port: parseInt(split[1])
+            })
+          }
+        })
+        break
+      case 'proxyscrape':
+        const temp = await ProxyScrapeAPI.getProxies({ proxytype: 'socks5' })
+        for (const proxy of temp) {
+          const slice = proxy.split(':')
+          proxies.push({
+            host: slice[0],
+            port: parseInt(slice[1])
+          })
+        }
+        break
+      default:
+        throw new Error('Invalid proxy type')
     }
+
     shuffle(proxies)
     log(`Amount of proxies: ${proxies.length}`.green)
     log(JSON.stringify(proxies))
 
-    if (proxies.length < amount.bots) {
+    if (proxies.length < (amount.bots * amount.workers)) {
       log('Not enough proxies, exiting...'.red)
+      log(`Required: ${amount.bots * amount.workers} Actual: ${proxies.length}`.red)
       process.exit(1)
     }
   }
@@ -66,7 +88,7 @@ async function main () {
     }
 
     const workerData: AttackOptions = {
-      proxy: proxies,
+      proxies: proxies,
       useTimeout: useTimeout,
       workerNumber: i,
       usernames: nicknames,
@@ -74,7 +96,7 @@ async function main () {
       port
     }
 
-    const worker = new Worker(module, {
+    const worker = new Worker(moduleFile, {
       workerData: workerData
     })
 

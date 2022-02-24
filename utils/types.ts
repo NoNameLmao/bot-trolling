@@ -12,7 +12,7 @@ export interface LogMessage {
 }
 
 export interface AttackOptions {
-  proxy?: ProxyType[]
+  proxies?: ProxyType[]
   useTimeout: boolean
   workerNumber: number
   usernames: string[]
@@ -24,3 +24,5 @@ export interface ProxyType {
   host: string
   port: number
 }
+
+export type ProxySource = 'proxyscrape' | 'txt'

@@ -1,7 +1,7 @@
 import { parentPort, workerData as anyWorkerData } from 'worker_threads'
 import { getRandomArbitrary, shuffleArray, sleep } from 'emberutils'
 import { Bot } from 'mineflayer'
-import {createAttackBot, kickHandler, log, shuffle} from '../shared'
+import {awaitReady, createAttackBot, kickHandler, log, shuffle} from '../shared'
 import { AttackOptions } from '../../utils/types'
 import 'colors'
 import prismarineChat from 'prismarine-chat'
@@ -9,19 +9,7 @@ import prismarineChat from 'prismarine-chat'
 const chatInstance = prismarineChat('1.12')
 const { fromNotch } = chatInstance;
 
-(async () => {
-  // function to wait until all workers are ready and main thread sends the message to start
-  async function awaitReady () {
-    return await new Promise<void>(resolve => {
-      parentPort!.once('message', async message => {
-        // if message object's ready property is "true", resolve
-        if (message.ready) resolve()
-        // otherwise, keep waiting
-        else await awaitReady()
-      })
-    })
-  }
-
+async function main () {
   await awaitReady()
 
   const spaceRegex = /\s{2,}/gm
@@ -29,8 +17,8 @@ const { fromNotch } = chatInstance;
   const usernames = workerOptions.usernames
   shuffleArray(usernames)
 
-  if (workerOptions.proxy)
-    shuffle(workerOptions.proxy)
+  if (workerOptions.proxies)
+    shuffle(workerOptions.proxies)
 
   let i = 0
   for (const username of usernames) {
@@ -48,9 +36,9 @@ const { fromNotch } = chatInstance;
         username: username,
         host: workerOptions.host,
         port: workerOptions.port,
-        proxy: (workerOptions.proxy != null)
+        proxy: (workerOptions.proxies != null)
           ? (() => {
-              const proxy = workerOptions.proxy[i]
+              const proxy = workerOptions.proxies[i]
               return {
                 host: proxy.host,
                 port: proxy.port
@@ -94,4 +82,8 @@ const { fromNotch } = chatInstance;
 
     i++
   }
-})()
+}
+
+main().catch(error => {
+  log(error)
+})

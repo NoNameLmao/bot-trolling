@@ -26,6 +26,7 @@
     "minecraft-protocol": "^1.30.0",
     "mineflayer": "^4.0.0",
     "prismarine-chat": "^1.6.0",
+    "proxy-agent": "^5.0.0",
     "request-promise": "^4.2.6",
     "socks": "^2.6.2",
     "ts-node": "^10.5.0",

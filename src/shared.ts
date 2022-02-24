@@ -81,6 +81,14 @@ export function kickHandler(reason: string, username: string) {
     }
 }
 
+export async function awaitReady () {
+  return await new Promise<void>(resolve => {
+    parentPort!.once('message', async message => {
+      if (message.ready) resolve()
+      else await awaitReady()
+    })
+  })
+}
 
 export function log (text: string) {
   if (isMainThread) {
