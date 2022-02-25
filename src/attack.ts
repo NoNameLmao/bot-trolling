@@ -1,22 +1,21 @@
 import 'colors'
-import { Worker } from 'worker_threads'
+import {Worker} from 'worker_threads'
 import os from 'os'
 import { log, shuffle } from './shared'
 import {ProxyType, AttackOptions, ProxySource} from '../utils/types'
 import { host, port } from '../config.json'
 import { ProxyScrapeAPI } from '../utils/proxy-scrape'
 import fs from 'fs'
-import ProxyAgent from "proxy-agent";
 
 const amount = {
   workers: 2,
   bots: 5
 }
 
-const moduleFile = './src/queue/worker.ts'
+const moduleFile = './src/queue/workerRewrite.ts'
 const useProxy = true
 const proxySource: ProxySource = 'txt'
-const useTimeout = false
+const useTimeout = true
 
 const highPriority = false
 

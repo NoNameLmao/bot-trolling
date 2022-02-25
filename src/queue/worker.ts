@@ -49,7 +49,7 @@ async function main () {
       })
     }
 
-    log(`[${i + 1}/${usernames.length}] Creating bot ${username}... (${usernames.length - i} left)`.green)
+    log(`[${i + 1}/${usernames.length}] Creating bot ${username}... (${usernames.length - i - 1} left)`.green)
     let bot = await createBot()
     registerListeners()
 

@@ -45,7 +45,8 @@ function troll (): void {
   bot = createAttackBot({
     host: host,
     port: port,
-    username: username
+    username: username,
+    noFeatures: true,
   })
   // parse kick reason if kicked
   bot.once('kicked', async reason => {

@@ -21,8 +21,8 @@ export interface AttackOptions {
 }
 
 export interface ProxyType {
-  host: string
-  port: number
+  host: string,
+  port: number,
 }
 
 export type ProxySource = 'proxyscrape' | 'txt'

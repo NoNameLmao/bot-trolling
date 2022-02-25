@@ -29,20 +29,19 @@ async function main () {
   for (const username of usernames) {
     async function createBot (): Promise<Client> {
       if (workerOptions.useTimeout) {
-        const timeout = getRandomArbitrary(5000, 200000)
+        const timeout = getRandomArbitrary(500, 5000)
         log(`[${username}] Waiting for ${timeout / 1000}s before logging in...`)
         await sleep(timeout)
       }
 
       const proxy = workerOptions.proxies ? workerOptions.proxies![i] : null
 
-      ProxyAgent()
       return createClient({
         username: username,
         host: workerOptions.host,
         port: workerOptions.port,
         version: '1.12.2',
-        /*agent: proxy ? new ProxyAgent({ protocol: 'socks5:', host: proxy.host, port: proxy.port }) : undefined,*/
+        agent: proxy ? new ProxyAgent(`socks://${proxy.host}:${proxy.port}`) : undefined,
         connect: proxy ? (client) => {
           socks.createConnection({
               proxy: {
@@ -69,13 +68,13 @@ async function main () {
       })
     }
 
-    log(`[${i + 1}/${usernames.length}] Creating bot ${username}... (${usernames.length - i} left)`.green)
+    log(`[${i + 1}/${usernames.length}] Creating bot ${username}... (${usernames.length - i - 1} left)`.green)
     let bot = await createBot()
     registerListeners()
 
     function registerListeners () {
       bot.once('login', botLoginHandler)
-      bot.once('kicked', reason => kickHandler(reason, username))
+      bot.once('disconnect', packet => kickHandler(packet.reason, username))
     }
 
     function botLoginHandler () {

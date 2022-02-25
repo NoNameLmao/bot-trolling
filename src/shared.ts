@@ -2,6 +2,10 @@ import { Bot, createBot as createMinecraftBot } from 'mineflayer'
 import { SocksClient } from 'socks'
 import { parentPort, isMainThread, workerData } from 'worker_threads'
 import { AttackOptions } from '../utils/types'
+import ProxyAgent from "proxy-agent";
+import prismarineChat from "prismarine-chat";
+const chatInstance = prismarineChat('1.12')
+const { fromNotch } = chatInstance
 
 export function createAttackBot ({ username, host, port, proxy, noFeatures }:
 {
@@ -20,6 +24,7 @@ export function createAttackBot ({ username, host, port, proxy, noFeatures }:
     username: username,
     host: host,
     port: port,
+    agent: (proxy != null) ? new ProxyAgent(`socks://${proxy.host}:${proxy.port}`) : undefined,
     connect: (proxy != null) ? (client) => {
       SocksClient.createConnection({
         proxy: {
@@ -62,22 +67,22 @@ export function createAttackBot ({ username, host, port, proxy, noFeatures }:
 }
 
 export function kickHandler(reason: string, username: string) {
-    const jsonReason = JSON.parse(reason)
+    const normal = fromNotch(reason).toString()
     try {
       // blacklisted ip
-      if (jsonReason.extra[0].extra[1].text.includes('BotSentry') && jsonReason.extra[0].extra[5].text.includes('IP is blacklisted')) log(`[${username}] IP blacklist by BotSentry`.red)
+      if (normal.includes('BotSentry') && normal.includes('IP is blacklisted')) log(`[${username}] IP blacklist by BotSentry`.red)
       // antibot mode on
-      else if (jsonReason.extra[0].extra[3].text.includes('Bot Attack')) log(`[${username}] BotSentry AntiBot mode is on for ${jsonReason.extra[0].extra[7]}s`.red)
+      else if (normal.includes('Bot Attack')) log(`[${username}] BotSentry AntiBot mode is on for ${normal}s`.red) // TODO: Extract time
       // blacklisted for too many online players from single ip
-      else if (jsonReason.extra[0].extra[3].text.includes('limit of accounts')) log(`[${username}] IP blacklist for per-IP account limit by BotSentry`.red)
+      else if (normal.includes('limit of accounts')) log(`[${username}] IP blacklist for per-IP account limit by BotSentry`.red)
       // first time joining
-      else if (jsonReason.extra[0].extra[5].text.includes('dangerous activity')) log(`[${username}] BotSentry is analyzing the connection`.red)
+      else if (normal.includes('dangerous activity')) log(`[${username}] BotSentry is analyzing the connection`.red)
       // something else
-      else console.log(jsonReason.extra[0])
+      else console.log(normal)
     } catch (err) {
       console.log(err)
       console.log(reason)
-      console.log(jsonReason)
+      console.log(normal)
     }
 }
 
