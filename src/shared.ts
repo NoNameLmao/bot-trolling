@@ -2,8 +2,8 @@ import { Bot, createBot as createMinecraftBot } from 'mineflayer'
 import { SocksClient } from 'socks'
 import { parentPort, isMainThread, workerData } from 'worker_threads'
 import { AttackOptions } from '../utils/types'
-import ProxyAgent from "proxy-agent";
-import prismarineChat from "prismarine-chat";
+import ProxyAgent from 'proxy-agent'
+import prismarineChat from 'prismarine-chat'
 const chatInstance = prismarineChat('1.12')
 const { fromNotch } = chatInstance
 
@@ -15,7 +15,7 @@ export function createAttackBot ({ username, host, port, proxy, noFeatures }:
   proxy?: {
     host: string
     port: number
-  },
+  }
   noFeatures: boolean
 }): Bot {
   return createMinecraftBot({
@@ -66,30 +66,30 @@ export function createAttackBot ({ username, host, port, proxy, noFeatures }:
   })
 }
 
-export function kickHandler(reason: string, username: string) {
-    const normal = fromNotch(reason).toString()
-    try {
-      // blacklisted ip
-      if (normal.includes('BotSentry') && normal.includes('IP is blacklisted')) log(`[${username}] IP blacklist by BotSentry`.red)
-      // antibot mode on
-      else if (normal.includes('Bot Attack')) log(`[${username}] BotSentry AntiBot mode is on for ${normal}s`.red) // TODO: Extract time
-      // blacklisted for too many online players from single ip
-      else if (normal.includes('limit of accounts')) log(`[${username}] IP blacklist for per-IP account limit by BotSentry`.red)
-      // first time joining
-      else if (normal.includes('dangerous activity')) log(`[${username}] BotSentry is analyzing the connection`.red)
-      // something else
-      else console.log(normal)
-    } catch (err) {
-      console.log(err)
-      console.log(reason)
-      console.log(normal)
-    }
+export function kickHandler (reason: string, username: string) {
+  const normal = fromNotch(reason).toString()
+  try {
+    // blacklisted ip
+    if (normal.includes('BotSentry') && normal.includes('IP is blacklisted')) log(`[${username}] IP blacklist by BotSentry`.red)
+    // antibot mode on
+    else if (normal.includes('Bot Attack')) log(`[${username}] BotSentry AntiBot mode is on for ${normal}s`.red) // TODO: Extract time
+    // blacklisted for too many online players from single ip
+    else if (normal.includes('limit of accounts')) log(`[${username}] IP blacklist for per-IP account limit by BotSentry`.red)
+    // first time joining
+    else if (normal.includes('dangerous activity')) log(`[${username}] BotSentry is analyzing the connection`.red)
+    // something else
+    else console.log(normal)
+  } catch (err) {
+    console.log(err)
+    console.log(reason)
+    console.log(normal)
+  }
 }
 
 export async function awaitReady () {
   return await new Promise<void>(resolve => {
     parentPort!.once('message', async message => {
-      if (message.ready) resolve()
+      if (message.channel === 'ready') resolve()
       else await awaitReady()
     })
   })
@@ -102,12 +102,28 @@ export function log (text: string) {
     const data: AttackOptions = workerData
     const date = new Date()
     parentPort!.postMessage({
+      channel: 'log',
       date: date.getTime(),
       displayDate: date.toLocaleString(),
       id: data.workerNumber,
       log: { message: text }
     })
   }
+}
+
+export function chat (username: string, text: string) {
+  const data: AttackOptions = workerData
+  const date = new Date()
+  parentPort!.postMessage({
+    channel: 'chat',
+    date: date.getTime(),
+    displayDate: date.toLocaleString(),
+    id: data.workerNumber,
+    log: {
+      username,
+      message: text
+    }
+  })
 }
 
 export function shuffle <T> (a: T[]): T[] {
@@ -119,4 +135,22 @@ export function shuffle <T> (a: T[]): T[] {
     a[j] = x
   }
   return a
+}
+
+/**
+ * Generates a random password that consists of lowercase, uppercase, numbers and special characters.
+ * The length can be anything from 10 to 30 characters.
+ */
+export function generatePassword () {
+  const length = Math.floor(Math.random() * (30 - 10 + 1)) + 10
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()'
+  let password = ''
+  for (let i = 0; i < length; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return password
+}
+
+export function randomOf <T> (array: T[]): T {
+  return array[Math.floor(Math.random() * array.length)]
 }

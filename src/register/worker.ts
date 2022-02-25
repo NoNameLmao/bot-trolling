@@ -1,10 +1,13 @@
-import { workerData as anyWorkerData } from 'worker_threads'
+/*
+   This bot registers accounts and puts them into the database.
+ */
+import { parentPort, workerData as anyWorkerData } from 'worker_threads'
 import { AttackOptions } from '../../utils/types'
 import 'colors'
 import { getRandomArbitrary, sleep } from 'emberutils'
 import { Client, createClient } from 'minecraft-protocol'
 import { SocksClient as socks } from 'socks'
-import { awaitReady, kickHandler, log, shuffle } from '../shared'
+import { awaitReady, chat, generatePassword, kickHandler, log, randomOf, shuffle } from '../shared'
 import prismarineChat from 'prismarine-chat'
 import ProxyAgent from 'proxy-agent'
 
@@ -24,9 +27,12 @@ async function main () {
   shuffle(usernames)
   if (workerOptions.proxies != null) { shuffle(workerOptions.proxies) }
 
+  const useProxies: boolean = !(workerOptions.proxies == null)
+
   let i = 0
   for (const username of usernames) {
-    const proxy = (workerOptions.proxies != null) ? workerOptions.proxies[i] : null
+    const proxy = useProxies ? randomOf(workerOptions.proxies!) : null
+    log((proxy != null) ? `Using proxy ${proxy}` : 'Not using proxy')
 
     async function createBot (): Promise<Client> {
       if (workerOptions.useTimeout) {
@@ -36,18 +42,21 @@ async function main () {
         log(`[${username}] Waiting done...`)
       }
 
+      if (useProxies && (proxy == null)) { throw new Error('Proxy not found') }
+
       return createClient({
         username: username,
         host: workerOptions.host,
         port: workerOptions.port,
         version: '1.12.2',
-        agent: (proxy != null) ? new ProxyAgent(`socks://${proxy.host}:${proxy.port}`) : undefined,
-        connect: (proxy != null)
+        agent: useProxies ? new ProxyAgent(`socks://${proxy!.host}:${proxy!.port}`) : undefined,
+        hideErrors: true,
+        connect: useProxies
           ? (client) => {
               socks.createConnection({
                 proxy: {
-                  host: proxy.host,
-                  port: proxy.port,
+                  host: proxy!.host,
+                  port: proxy!.port,
                   type: 5
                 },
                 command: 'connect',
@@ -72,6 +81,7 @@ async function main () {
 
     log(`[${i + 1}/${usernames.length}] Creating bot ${username}... (${usernames.length - i - 1} left)`.green)
     let bot = await createBot()
+    const password = generatePassword()
     registerListeners()
 
     function registerListeners () {
@@ -87,12 +97,18 @@ async function main () {
 
         if (message === '' || message === ' ' || message === '\u200b' || !message || spaceRegex.test(message)) return
 
-        log(`[${username}] ${message}`.yellow)
-        if (message.includes('8b8t')) {
-          log(`[${username}] Reached the end of the queue, ending the connection and reconnecting...`.green)
-          bot.end()
-          bot = await createBot()
-          registerListeners()
+        chat(username, message)
+        if (message.startsWith('[8b8t] Please register to play 7b7t /register <password>')) {
+          bot.write('chat', { message: `/register ${password}` })
+        }
+
+        if (message.startsWith('Successfully registered!')) {
+          log(`[${username}] Registered!`.green)
+          parentPort!.postMessage({
+            channel: 'register',
+            username,
+            password
+          })
         }
       })
       bot.once('kicked', async reason => {

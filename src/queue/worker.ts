@@ -1,13 +1,13 @@
 import { parentPort, workerData as anyWorkerData } from 'worker_threads'
 import { getRandomArbitrary, shuffleArray, sleep } from 'emberutils'
 import { Bot } from 'mineflayer'
-import {awaitReady, createAttackBot, kickHandler, log, shuffle} from '../shared'
+import { awaitReady, createAttackBot, kickHandler, log, shuffle } from '../shared'
 import { AttackOptions } from '../../utils/types'
 import 'colors'
 import prismarineChat from 'prismarine-chat'
 
 const chatInstance = prismarineChat('1.12')
-const { fromNotch } = chatInstance;
+const { fromNotch } = chatInstance
 
 async function main () {
   await awaitReady()
@@ -17,8 +17,7 @@ async function main () {
   const usernames = workerOptions.usernames
   shuffleArray(usernames)
 
-  if (workerOptions.proxies)
-    shuffle(workerOptions.proxies)
+  if (workerOptions.proxies != null) { shuffle(workerOptions.proxies) }
 
   let i = 0
   for (const username of usernames) {

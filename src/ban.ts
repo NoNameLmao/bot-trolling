@@ -18,7 +18,7 @@
 
 import 'colors'
 import { Bot } from 'mineflayer'
-import { host, username, port } from '../config.json'
+import { host, port } from '../config.json'
 import { createAttackBot, log } from './shared'
 
 let bot: Bot | null
@@ -45,10 +45,9 @@ function troll (): void {
   bot = createAttackBot({
     host: host,
     port: port,
-    username: username,
-    noFeatures: true,
+    username: 'BobTheBuilder229',
+    noFeatures: true
   })
-  // parse kick reason if kicked
   bot.once('kicked', async reason => {
     if (bot == null) return
 

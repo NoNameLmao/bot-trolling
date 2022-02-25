@@ -1,18 +1,19 @@
 import 'colors'
-import {Worker} from 'worker_threads'
+import { Worker } from 'worker_threads'
 import os from 'os'
 import { log, shuffle } from './shared'
-import {ProxyType, AttackOptions, ProxySource} from '../utils/types'
+import { ProxyType, AttackOptions, ProxySource } from '../utils/types'
 import { host, port } from '../config.json'
 import { ProxyScrapeAPI } from '../utils/proxy-scrape'
 import fs from 'fs'
+import { sleep } from 'emberutils'
 
 const amount = {
-  workers: 2,
-  bots: 5
+  workers: 25,
+  bots: 15
 }
 
-const moduleFile = './src/queue/workerRewrite.ts'
+const moduleFile = './src/register/worker.ts'
 const useProxy = true
 const proxySource: ProxySource = 'txt'
 const useTimeout = true
@@ -35,6 +36,17 @@ log('Asyncing program...'.green)
 main()
 
 async function main () {
+  let messagesQueued: any[] = []
+
+  setInterval(() => {
+    if (messagesQueued.length > 0) {
+      for (const message of messagesQueued) {
+        logTimedOfWorker(message)
+        messagesQueued = []
+      }
+    }
+  }, 0.5 * 1000)
+
   const proxies: ProxyType[] = []
   if (useProxy) {
     log('Collecting proxies...'.green)
@@ -66,13 +78,14 @@ async function main () {
 
     shuffle(proxies)
     log(`Amount of proxies: ${proxies.length}`.green)
-    log(JSON.stringify(proxies))
 
-    if (proxies.length < (amount.bots * amount.workers)) {
+    /*
+    const required = (amount.bots * amount.workers) / amount.accountsPerProxy
+    if (proxies.length < required) {
       log('Not enough proxies, exiting...'.red)
-      log(`Required: ${amount.bots * amount.workers} Actual: ${proxies.length}`.red)
+      log(`Required: ${required} Actual: ${proxies.length}`.red)
       process.exit(1)
-    }
+    } */
   }
 
   log('Starting worker spawning loop...'.green)
@@ -103,26 +116,51 @@ async function main () {
       console.log(error)
     })
     worker.on('exit', (code) => {
-      if (code !== 0) { console.log(new Error(`Worker stopped with exit code ${code}`)) }
+      if (code !== 0) { console.log(`Worker stopped with exit code ${code}`.red) }
     })
 
     workerArray.push(worker)
 
     log(`Summoned worker number ${i + 1}... (${amount.workers - i - 1} left)`.green)
     worker.on('message', message => {
-      const delay = (new Date().getTime() - message.date) / 1000
-
-      let delayString: string
-      if (delay > 1 && delay < 5) delayString = `${delay}s ago`.yellow
-      else if (delay > 5) delayString = `${delay}s ago`.red
-      else if (delay === 0.000) delayString = `${delay}s ago`.green
-      else delayString = `${delay}s ago`.green
+      if (message.channel !== 'log') return
 
       if (message.log) {
-        console.log(`[${`W${message.id}`.yellow}] [${message.displayDate} (${delayString})] ${message.log.message}`)
+        logTimedOfWorker(message)
       }
+    })
+
+    worker.on('message', message => {
+      if (message.channel !== 'chat') return
+
+      if (message.log) {
+        if (!messagesQueued.map(message => message.log.message).includes(message.log.message)) { messagesQueued.push(message) }
+      }
+    })
+
+    worker.on('message', message => {
+      if (message.channel !== 'register') return
+
+      log(message.password)
     })
   }
 
-  workerArray.forEach(worker => worker.postMessage({ ready: true }))
+  for (const worker in workerArray) {
+    log(`Worker ${worker} is readying with ${amount.bots} bots`.magenta)
+    workerArray[worker].postMessage({ channel: 'ready' })
+    await sleep(2 * 1000)
+  }
+}
+
+function logTimedOfWorker (message: any) {
+  console.log(`[${`W${message.id}`.yellow}] [${message.displayDate} (${formatTime(message)})] ${message.log.message}`)
+}
+
+function formatTime (message: any): string {
+  const delay = (new Date().getTime() - message.date) / 1000
+
+  if (delay > 1 && delay < 5) return `${delay}s ago`.yellow
+  else if (delay > 5) return `${delay}s ago`.red
+  else if (delay === 0.000) return `${delay}s ago`.green
+  else return `${delay}s ago`.green
 }
