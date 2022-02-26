@@ -104,9 +104,9 @@ async function main () {
         chat(username, message)
         if (message.startsWith('[8b8t] Please register to play 7b7t /register <password>')) {
           bot.write('chat', { message: `/register ${password}` })
-        }
-
-        if (message.startsWith('Successfully registered!')) {
+        } else if (message.startsWith('[8b8t] Please, login with the command: /login <password>')) {
+          bot.write('chat', { message: `/login ${password}` })
+        } else if (message.startsWith('Successfully registered!')) {
           log(`[${username}] Registered!`.green)
           parentPort!.postMessage({
             channel: 'register',
