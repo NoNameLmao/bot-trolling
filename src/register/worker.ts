@@ -7,7 +7,7 @@ import 'colors'
 import { getRandomArbitrary, sleep } from 'emberutils'
 import { Client, createClient } from 'minecraft-protocol'
 import { SocksClient as socks } from 'socks'
-import { awaitReady, chat, generatePassword, kickHandler, log, randomOf, shuffle } from '../shared'
+import {awaitReady, chat, hash, kickHandler, log, randomOf, shuffle} from '../shared'
 import prismarineChat from 'prismarine-chat'
 import ProxyAgent from 'proxy-agent'
 
@@ -82,7 +82,7 @@ async function main () {
     log(`[${i + 1}/${usernames.length}] Creating bot ${username}... (${usernames.length - i - 1} left)`.green)
     let bot = await createBot()
     registerListeners()
-    const password = generatePassword()
+    const password = hash(username, workerOptions.passwordSeed)
 
     function registerListeners () {
       bot.on('error', async error => {

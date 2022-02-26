@@ -18,6 +18,7 @@ export interface AttackOptions {
   usernames: string[]
   host: string
   port: number
+  passwordSeed: number
 }
 
 export interface ProxyType {

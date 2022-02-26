@@ -3,7 +3,7 @@ import { Worker } from 'worker_threads'
 import os from 'os'
 import { log, shuffle } from './shared'
 import { ProxyType, AttackOptions, ProxySource } from '../utils/types'
-import { host, port } from '../config.json'
+import { host, port, passwordSeed } from '../config.json'
 import * as ProxyScrapeAPI from '../utils/proxy-scrape'
 import fs from 'fs'
 import { sleep } from 'emberutils'
@@ -105,7 +105,8 @@ async function main () {
       workerNumber: i,
       usernames: nicknames,
       host,
-      port
+      port,
+      passwordSeed
     }
 
     const worker = new Worker(moduleFile, {
