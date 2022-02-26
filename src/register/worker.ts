@@ -29,6 +29,16 @@ async function main () {
 
   const useProxies: boolean = !(workerOptions.proxies == null)
 
+  const chatCallbacks: ((message:string) => void)[] = []
+
+  parentPort?.on('message', (message) => {
+    if (message.channel === 'say') {
+      for (const callback of chatCallbacks) {
+        callback(message.message)
+      }
+    }
+  })
+
   let i = 0
   for (const username of usernames) {
     const proxy = useProxies ? randomOf(workerOptions.proxies!) : null
@@ -70,11 +80,11 @@ async function main () {
               }).catch((err) => {
                 if (err.toString().includes('Socket closed')) {
                   log(`[${username}] Proxy socket closed`.red)
-                } else if (err.toString().includes('Proxy connection timed out') | err.toString().includes('ETIMEDOUT')) {
+                } else if (err.toString().includes('Proxy connection timed out') || err.toString().includes('ETIMEDOUT')) {
                   log(`[${username}] Proxy connection timed out`.red)
                 } else if (err.toString().includes('ECONNRESET')) {
                   log(`[${username}] ECONNRESET`.red)
-                } else if (err.toString().includes('ECONNREFUSED') | err.toString().includes('ConnectionRefused')) {
+                } else if (err.toString().includes('ECONNREFUSED') || err.toString().includes('ConnectionRefused')) {
                   log(`[${username}] Proxy connection refused`.red)
                 } else if (err.toString().includes('NotAllowed')) {
                   log(`[${username}] Proxy rejected connection - NotAllowed`.red)
@@ -98,13 +108,10 @@ async function main () {
     registerListeners()
     const password = hash(username)
 
-    parentPort?.on('message', (message) => {
-      if (!bot) return
-
-      if (message.channel === 'say') {
-        bot.write('chat', { message: message.message })
-      }
+    chatCallbacks.push(message => {
+      bot.write('chat', { message: message })
     })
+
 
     function registerListeners () {
       bot.on('error', async error => {
