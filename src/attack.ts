@@ -2,15 +2,15 @@ import 'colors'
 import { Worker } from 'worker_threads'
 import os from 'os'
 import { log, shuffle } from './shared'
-import { ProxyType, AttackOptions, ProxySource } from '../utils/types'
+import {ProxyType, AttackOptions, ProxySource, BotConfig} from '../utils/types'
 import { host, port } from '../config.json'
 import * as ProxyScrapeAPI from '../utils/proxy-scrape'
 import fs from 'fs'
 import { sleep } from 'emberutils'
 
 const amount = {
-  workers: 2,
-  bots: 3
+  workers: 50,
+  bots: 75
 }
 
 const moduleFile = './src/register/worker.ts'
@@ -23,7 +23,7 @@ const highPriority = false
 log('Starting...'.green)
 log(`Amount of workers: ${amount.workers}`.green)
 log('Importing usernames...'.green)
-const bots: Array<{ username: string }> = require('../bots.json')
+const bots: BotConfig[] = require('../bots.json')
 
 log(`Amount of usernames: ${bots.length}, will use ${amount.bots * amount.workers} of them`.green)
 log('Shuffling bots array...'.green)
@@ -140,8 +140,15 @@ async function main () {
   for (const worker in workerArray) {
     log(`Worker ${worker} is readying with ${amount.bots} bots`.magenta)
     workerArray[worker].postMessage({ channel: 'ready' })
-    await sleep(2 * 1000)
+    await sleep(0.5 * 1000)
   }
+
+  setInterval(() => {
+    log('Sending /kill message to all workers'.yellow)
+    for (const worker in workerArray) {
+      workerArray[worker].postMessage({ channel: 'say', message: '/kill' })
+    }
+  }, 5 * 1000)
 }
 
 function logTimedOfWorker (message: any) {

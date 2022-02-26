@@ -84,6 +84,14 @@ async function main () {
     registerListeners()
     const password = hash(username)
 
+    parentPort?.on('message', (message) => {
+      if (!bot) return
+
+      if (message.channel === 'say') {
+        bot.write('chat', { message: message.message })
+      }
+    })
+
     function registerListeners () {
       bot.on('error', async error => {
         log(`[${username}] Error: ${error} recreating`.red)
@@ -115,7 +123,7 @@ async function main () {
           })
         }
       })
-      bot.once('kicked', async reason => {
+      bot.once('end', async reason => {
         const object = fromNotch(reason)
         log(`[${username}] ${object.toString().red}`.yellow + ', recreating the bot...')
         await recreateBot()

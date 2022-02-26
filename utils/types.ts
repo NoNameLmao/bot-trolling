@@ -4,6 +4,10 @@ export interface Config {
   username: string
 }
 
+export interface BotConfig {
+  username: string
+}
+
 export interface LogMessage {
   date: number
   displayDate: string
