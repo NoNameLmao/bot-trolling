@@ -1,74 +1,62 @@
-// code from https://www.npmjs.com/package/simple-proxy-scraper
-
 import request from 'request-promise'
 
-const apiRoot = 'https://api.proxyscrape.com/'
-const proxyTypes = ['http', 'socks4', 'socks5', 'all']
-const anonimityTypes = ['elite', 'anonymous', 'transparent', 'all']
-const sslTypes = ['yes', 'no', 'all']
+const apiRoot = 'https://api.proxyscrape.com/v2/'
+export type proxyTypes = 'http'|'socks4'|'socks5'|'all'
+export type anonymityTypes = 'elite'|'anonymous'|'transparent'|'all'
+export type sslTypes = 'yes'|'no'|'all'
 
 export interface OptionType {
-  proxytype?: 'http' | 'socks4' | 'socks5' | 'all'
+  protocol?: proxyTypes
   timeout?: number
-  anonimity?: 'elite' | 'anonymous' | 'transparent' | 'all'
+  anonymity?: anonymityTypes
   country?: string
-  ssl?: 'yes' | 'no' | 'all'
-  limit?: number
-  averagetimeout?: number
+  ssl?: sslTypes
 }
 
 function returnParamString (options: OptionType): string {
   let paramString = ''
-  if (options.proxytype && proxyTypes.includes(options.proxytype.toLowerCase())) {
-    paramString += `&proxytype=${options.proxytype.toLowerCase()}`
+  if (options.protocol !== undefined) {
+    paramString += `&protocol=${options.protocol}`
   }
-  if (options.timeout) {
+  if (options.timeout !== undefined) {
     paramString += `&timeout=${options.timeout}`
   }
-  if (options.anonimity && anonimityTypes.includes(options.anonimity.toLowerCase())) {
-    paramString += `&anonimity=${options.anonimity}`
-  }
-  if (options.country) {
+  if (options.country !== undefined) {
     paramString += `&country=${options.country}`
   }
-  if (options.ssl && sslTypes.includes(options.ssl.toLowerCase())) {
+  if (options.ssl !== undefined) {
     paramString += `&ssl=${options.ssl}`
   }
-  if (options.limit) {
-    paramString += `&limit=${options.limit}`
-  }
-  if (options.averagetimeout) {
-    paramString += `&averagetimeout=${options.averagetimeout}`
+  if (options.anonymity !== undefined) {
+    paramString += `&anonymity=${options.anonymity}`
   }
   return paramString
 }
 
-export class ProxyScrapeAPI {
-  static async getProxies (options: OptionType): Promise<string[]> {
-    const reqUrl = `${apiRoot}?request=displayproxies${returnParamString(options)}`
-    const response = await request.get(reqUrl, {
-      resolveWithFullResponse: true
+export async function getProxies (options: OptionType): Promise<string[]> {
+  const reqUrl = `${apiRoot}?request=displayproxies${returnParamString(options)}`
+  const response = await request.get(reqUrl, {
+    resolveWithFullResponse: true
+  })
+  /** @type {string} */
+  const { body }: {body: string} = await response
+  const proxies: string[] = body
+    .split('\n')
+    .map((line: string) => {
+      if (line.length > 5) {
+        return line.replace('\r', '')
+      } else {
+        return line
+      }
     })
-    /** @type {string} */
-    const { body }: {body: string} = await response
-    const proxies: string[] = body
-      .split('\n')
-      .map((line: string) => {
-        if (line.length > 5) {
-          return line.replace('\r', '')
-        } else {
-          return line
-        }
-      })
-    return proxies.filter(Boolean)
-  }
+  return proxies.filter(Boolean)
+}
 
-  static async getAmountProxies (options: OptionType): Promise<number> {
-    const reqUrl = `${apiRoot}?request=amountproxies${returnParamString(options)}`
-    const res = await request.get(reqUrl, {
-      resolveWithFullResponse: true
-    })
-    const { body }: {body: string} = await res
-    return parseInt(body)
-  }
+export async function getAmountProxies (options: OptionType): Promise<number> {
+  const reqUrl = `${apiRoot}?request=amountproxies${returnParamString(options)}`
+  const res = await request.get(reqUrl, {
+    resolveWithFullResponse: true
+  })
+  const { body }: {body: string} = await res
+  return parseInt(body)
 }

@@ -1,4 +1,4 @@
-import { parentPort, workerData as anyWorkerData } from 'worker_threads'
+import { workerData as anyWorkerData } from 'worker_threads'
 import { getRandomArbitrary, shuffleArray, sleep } from 'emberutils'
 import { Bot } from 'mineflayer'
 import { awaitReady, createAttackBot, kickHandler, log, shuffle } from '../shared'
@@ -9,7 +9,7 @@ import prismarineChat from 'prismarine-chat'
 const chatInstance = prismarineChat('1.12')
 const { fromNotch } = chatInstance
 
-async function main () {
+async function main (): Promise<void> {
   await awaitReady()
 
   const spaceRegex = /\s{2,}/gm

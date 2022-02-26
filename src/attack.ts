@@ -4,18 +4,18 @@ import os from 'os'
 import { log, shuffle } from './shared'
 import { ProxyType, AttackOptions, ProxySource } from '../utils/types'
 import { host, port } from '../config.json'
-import { ProxyScrapeAPI } from '../utils/proxy-scrape'
+import * as ProxyScrapeAPI from '../utils/proxy-scrape'
 import fs from 'fs'
 import { sleep } from 'emberutils'
 
 const amount = {
-  workers: 25,
-  bots: 15
+  workers: 40,
+  bots: 25
 }
 
 const moduleFile = './src/register/worker.ts'
 const useProxy = true
-const proxySource: ProxySource = 'txt'
+const proxySource: ProxySource = 'proxyscrape'
 const useTimeout = true
 
 const highPriority = false
@@ -33,7 +33,7 @@ log('Changing the process priority...'.green)
 os.setPriority(highPriority ? -10 : 19)
 
 log('Asyncing program...'.green)
-main()
+void main()
 
 async function main () {
   let messagesQueued: any[] = []
@@ -63,7 +63,7 @@ async function main () {
         })
         break
       case 'proxyscrape':
-        const temp = await ProxyScrapeAPI.getProxies({ proxytype: 'socks5' })
+        const temp = await ProxyScrapeAPI.getProxies({ protocol: 'socks5', anonymity: 'elite' })
         for (const proxy of temp) {
           const slice = proxy.split(':')
           proxies.push({

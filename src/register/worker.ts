@@ -32,7 +32,7 @@ async function main () {
   let i = 0
   for (const username of usernames) {
     const proxy = useProxies ? randomOf(workerOptions.proxies!) : null
-    log((proxy != null) ? `Using proxy ${proxy}` : 'Not using proxy')
+    log((proxy != null) ? `Using proxy ${proxy}`.green : 'Not using proxy'.bgRed)
 
     async function createBot (): Promise<Client> {
       if (workerOptions.useTimeout) {
@@ -81,10 +81,14 @@ async function main () {
 
     log(`[${i + 1}/${usernames.length}] Creating bot ${username}... (${usernames.length - i - 1} left)`.green)
     let bot = await createBot()
-    const password = generatePassword()
     registerListeners()
+    const password = generatePassword()
 
     function registerListeners () {
+      bot.on('error', async error => {
+        log(`[${username}] Error: ${error} recreating`.red)
+        await recreateBot()
+      })
       bot.once('login', botLoginHandler)
       bot.once('disconnect', packet => kickHandler(packet.reason, username))
     }
@@ -114,10 +118,14 @@ async function main () {
       bot.once('kicked', async reason => {
         const object = fromNotch(reason)
         log(`[${username}] ${object.toString().red}`.yellow + ', recreating the bot...')
-        bot.end()
-        bot = await createBot()
-        registerListeners()
+        await recreateBot()
       })
+    }
+
+    async function recreateBot(): Promise<void> {
+      bot.end()
+      bot = await createBot()
+      registerListeners()
     }
 
     i++
