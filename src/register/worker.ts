@@ -32,7 +32,7 @@ async function main () {
   let i = 0
   for (const username of usernames) {
     const proxy = useProxies ? randomOf(workerOptions.proxies!) : null
-    log((proxy != null) ? `Using proxy ${proxy}`.green : 'Not using proxy'.bgRed)
+    log((proxy != null) ? `Using proxy ${proxy.host}:${proxy.port}`.green : 'Not using proxy'.bgRed)
 
     async function createBot (): Promise<Client> {
       if (workerOptions.useTimeout) {
@@ -68,10 +68,24 @@ async function main () {
                 client.setSocket(info.socket)
                 client.emit('connect')
               }).catch((err) => {
-                if (err.toString().includes('ETIMEDOUT')) {
-                  log(`[${username}] Proxy timed out`.red)
-                } else if (err.toString().includes('Socket closed')) {
+                if (err.toString().includes('Socket closed')) {
                   log(`[${username}] Proxy socket closed`.red)
+                } else if (err.toString().includes('Proxy connection timed out') | err.toString().includes('ETIMEDOUT')) {
+                  log(`[${username}] Proxy connection timed out`.red)
+                } else if (err.toString().includes('ECONNRESET')) {
+                  log(`[${username}] ECONNRESET`.red)
+                } else if (err.toString().includes('ECONNREFUSED') | err.toString().includes('ConnectionRefused')) {
+                  log(`[${username}] Proxy connection refused`.red)
+                } else if (err.toString().includes('NotAllowed')) {
+                  log(`[${username}] Proxy rejected connection - NotAllowed`.red)
+                } else if (err.toString().includes('Failure')) {
+                  log(`[${username}] Proxy rejected connection - Failure`.red)
+                } else if (err.toString().includes('no accepted authentication type')) {
+                  log(`[${username}] Proxy recieved invalid initial handshake (no accepted authentication type)`.red)
+                } else if (err.toString().includes('ENOTFOUND')) {
+                  log(`[${username}] Proxy: getaddrinfo ENOTFOUND`.red)
+                } else if (err.toString().includes('HostUnreachable')) {
+                  log(`[${username}] Proxy rejected connection - HostUnreachable`.red)
                 } else console.log(err)
               })
             }

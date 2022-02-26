@@ -2,15 +2,15 @@ import 'colors'
 import { Worker } from 'worker_threads'
 import os from 'os'
 import { log, shuffle } from './shared'
-import {ProxyType, AttackOptions, ProxySource, BotConfig} from '../utils/types'
+import {ProxyType, AttackOptions, ProxySource, BotConfig } from '../utils/types'
 import { host, port } from '../config.json'
 import * as ProxyScrapeAPI from '../utils/proxy-scrape'
 import fs from 'fs'
 import { sleep } from 'emberutils'
 
 const amount = {
-  workers: 50,
-  bots: 75
+  workers: 20,
+  bots: 25
 }
 
 const moduleFile = './src/register/worker.ts'
@@ -24,6 +24,9 @@ log('Starting...'.green)
 log(`Amount of workers: ${amount.workers}`.green)
 log('Importing usernames...'.green)
 const bots: BotConfig[] = require('../bots.json')
+
+log('Importing spam messages...')
+const spamMessages: string[] = require('../messages.json')
 
 log(`Amount of usernames: ${bots.length}, will use ${amount.bots * amount.workers} of them`.green)
 log('Shuffling bots array...'.green)
@@ -144,9 +147,10 @@ async function main () {
   }
 
   setInterval(() => {
-    log('Sending /kill message to all workers'.yellow)
+    const spamMessage = spamMessages[Math.floor(Math.random() * spamMessages.length)]
+    log(`Sending spam message to all workers ("${spamMessage}")`.yellow)
     for (const worker in workerArray) {
-      workerArray[worker].postMessage({ channel: 'say', message: '/kill' })
+      workerArray[worker].postMessage({ channel: 'say', message: spamMessage })
     }
   }, 5 * 1000)
 }

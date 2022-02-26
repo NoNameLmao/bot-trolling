@@ -29,7 +29,7 @@ async function main () {
   let i = 0
   for (const username of usernames) {
     const proxy = useProxies ? randomOf(workerOptions.proxies!) : null
-    log((proxy != null) ? `Using proxy ${proxy}`.green : 'Not using proxy'.bgRed)
+    log((proxy != null) ? `Using proxy ${proxy.host}:${proxy.port}`.green : 'Not using proxy'.bgRed)
 
     async function createBot (): Promise<Client> {
       if (workerOptions.useTimeout) {
