@@ -82,7 +82,7 @@ async function main () {
     log(`[${i + 1}/${usernames.length}] Creating bot ${username}... (${usernames.length - i - 1} left)`.green)
     let bot = await createBot()
     registerListeners()
-    const password = hash(username, workerOptions.passwordSeed)
+    const password = hash(username)
 
     function registerListeners () {
       bot.on('error', async error => {

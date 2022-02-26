@@ -6,6 +6,7 @@ import ProxyAgent from 'proxy-agent'
 import prismarineChat from 'prismarine-chat'
 const chatInstance = prismarineChat('1.12')
 const { fromNotch } = chatInstance
+import crypto from 'crypto'
 
 export function createAttackBot ({ username, host, port, proxy, noFeatures }:
 {
@@ -142,14 +143,6 @@ export function randomOf <T> (array: T[]): T {
   return array[Math.floor(Math.random() * array.length)]
 }
 
-export function hash(str: string, seed = 0) {
-  let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
-  for (let i = 0, ch; i < str.length; i++) {
-    ch = str.charCodeAt(i);
-    h1 = Math.imul(h1 ^ ch, 2654435761);
-    h2 = Math.imul(h2 ^ ch, 1597334677);
-  }
-  h1 = Math.imul(h1 ^ (h1>>>16), 2246822507) ^ Math.imul(h2 ^ (h2>>>13), 3266489909);
-  h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909);
-  return 4294967296 * (2097151 & h2) + (h1>>>0);
+export function hash(str: string): string {
+  return crypto.createHash('sha1').update(str).digest('hex').substring(0, 29)
 }

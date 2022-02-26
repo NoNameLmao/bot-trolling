@@ -3,14 +3,14 @@ import { Worker } from 'worker_threads'
 import os from 'os'
 import { log, shuffle } from './shared'
 import { ProxyType, AttackOptions, ProxySource } from '../utils/types'
-import { host, port, passwordSeed } from '../config.json'
+import { host, port } from '../config.json'
 import * as ProxyScrapeAPI from '../utils/proxy-scrape'
 import fs from 'fs'
 import { sleep } from 'emberutils'
 
 const amount = {
-  workers: 40,
-  bots: 25
+  workers: 2,
+  bots: 3
 }
 
 const moduleFile = './src/register/worker.ts'
@@ -78,14 +78,6 @@ async function main () {
 
     shuffle(proxies)
     log(`Amount of proxies: ${proxies.length}`.green)
-
-    /*
-    const required = (amount.bots * amount.workers) / amount.accountsPerProxy
-    if (proxies.length < required) {
-      log('Not enough proxies, exiting...'.red)
-      log(`Required: ${required} Actual: ${proxies.length}`.red)
-      process.exit(1)
-    } */
   }
 
   log('Starting worker spawning loop...'.green)
@@ -105,8 +97,7 @@ async function main () {
       workerNumber: i,
       usernames: nicknames,
       host,
-      port,
-      passwordSeed
+      port
     }
 
     const worker = new Worker(moduleFile, {

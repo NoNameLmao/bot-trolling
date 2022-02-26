@@ -1,5 +1,4 @@
 {
   "host": "servers.mcproshield.com",
-  "port": 48608,
-  "passwordSeed": 623345
+  "port": 48608
 }
