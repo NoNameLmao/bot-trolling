@@ -25,6 +25,7 @@ export function createAttackBot ({ username, host, port, proxy, noFeatures }:
     host: host,
     port: port,
     agent: (proxy != null) ? new ProxyAgent(`socks://${proxy.host}:${proxy.port}`) : undefined,
+    hideErrors: true,
     connect: (proxy != null) ? (client) => {
       SocksClient.createConnection({
         proxy: {

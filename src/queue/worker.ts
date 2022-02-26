@@ -1,7 +1,7 @@
 import { workerData as anyWorkerData } from 'worker_threads'
 import { getRandomArbitrary, shuffleArray, sleep } from 'emberutils'
 import { Bot } from 'mineflayer'
-import { awaitReady, createAttackBot, kickHandler, log, shuffle } from '../shared'
+import {awaitReady, createAttackBot, kickHandler, log, randomOf, shuffle} from '../shared'
 import { AttackOptions } from '../../utils/types'
 import 'colors'
 import prismarineChat from 'prismarine-chat'
@@ -19,8 +19,13 @@ async function main (): Promise<void> {
 
   if (workerOptions.proxies != null) { shuffle(workerOptions.proxies) }
 
+  const useProxies: boolean = !(workerOptions.proxies == null)
+
   let i = 0
   for (const username of usernames) {
+    const proxy = useProxies ? randomOf(workerOptions.proxies!) : null
+    log((proxy != null) ? `Using proxy ${proxy}`.green : 'Not using proxy'.bgRed)
+
     async function createBot (): Promise<Bot> {
       // join with random delay
       if (workerOptions.useTimeout) {
@@ -35,12 +40,11 @@ async function main (): Promise<void> {
         username: username,
         host: workerOptions.host,
         port: workerOptions.port,
-        proxy: (workerOptions.proxies != null)
+        proxy: useProxies
           ? (() => {
-              const proxy = workerOptions.proxies[i]
               return {
-                host: proxy.host,
-                port: proxy.port
+                host: proxy!.host,
+                port: proxy!.port
               }
             })()
           : undefined,

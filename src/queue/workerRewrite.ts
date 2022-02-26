@@ -4,7 +4,7 @@ import 'colors'
 import { getRandomArbitrary, sleep } from 'emberutils'
 import { Client, createClient } from 'minecraft-protocol'
 import { SocksClient as socks } from 'socks'
-import { awaitReady, kickHandler, log, shuffle } from '../shared'
+import {awaitReady, kickHandler, log, randomOf, shuffle} from '../shared'
 import prismarineChat from 'prismarine-chat'
 import ProxyAgent from 'proxy-agent'
 
@@ -24,9 +24,12 @@ async function main () {
   shuffle(usernames)
   if (workerOptions.proxies != null) { shuffle(workerOptions.proxies) }
 
+  const useProxies: boolean = !(workerOptions.proxies == null)
+
   let i = 0
   for (const username of usernames) {
-    const proxy = (workerOptions.proxies != null) ? workerOptions.proxies[i] : null
+    const proxy = useProxies ? randomOf(workerOptions.proxies!) : null
+    log((proxy != null) ? `Using proxy ${proxy}`.green : 'Not using proxy'.bgRed)
 
     async function createBot (): Promise<Client> {
       if (workerOptions.useTimeout) {
@@ -41,13 +44,14 @@ async function main () {
         host: workerOptions.host,
         port: workerOptions.port,
         version: '1.12.2',
-        agent: (proxy != null) ? new ProxyAgent(`socks://${proxy.host}:${proxy.port}`) : undefined,
-        connect: (proxy != null)
-          ? (client) => {
+        agent: useProxies ? new ProxyAgent(`socks://${proxy!.host}:${proxy!.port}`) : undefined,
+        hideErrors: true,
+        connect: useProxies
+            ? (client) => {
               socks.createConnection({
                 proxy: {
-                  host: proxy.host,
-                  port: proxy.port,
+                  host: proxy!.host,
+                  port: proxy!.port,
                   type: 5
                 },
                 command: 'connect',
@@ -66,7 +70,7 @@ async function main () {
                 } else console.log(err)
               })
             }
-          : undefined
+            : undefined
       })
     }
 
