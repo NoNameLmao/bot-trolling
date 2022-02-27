@@ -1,7 +1,7 @@
 import { workerData as anyWorkerData } from 'worker_threads'
 import { getRandomArbitrary, shuffleArray, sleep } from 'emberutils'
 import { Bot } from 'mineflayer'
-import {awaitReady, createAttackBot, kickHandler, log, randomOf, shuffle} from '../shared'
+import { awaitReady, createAttackBot, kickHandler, log, randomOf, shuffle } from '../shared'
 import { AttackOptions } from '../../utils/types'
 import 'colors'
 import prismarineChat from 'prismarine-chat'

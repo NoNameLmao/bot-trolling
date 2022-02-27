@@ -4,9 +4,9 @@ import { parentPort, isMainThread, workerData } from 'worker_threads'
 import { AttackOptions } from '../utils/types'
 import ProxyAgent from 'proxy-agent'
 import prismarineChat from 'prismarine-chat'
+import crypto from 'crypto'
 const chatInstance = prismarineChat('1.12')
 const { fromNotch } = chatInstance
-import crypto from 'crypto'
 
 export function createAttackBot ({ username, host, port, proxy, noFeatures }:
 {
@@ -143,6 +143,6 @@ export function randomOf <T> (array: T[]): T {
   return array[Math.floor(Math.random() * array.length)]
 }
 
-export function hash(str: string): string {
+export function hash (str: string): string {
   return crypto.createHash('sha1').update(str).digest('hex').substring(0, 29)
 }

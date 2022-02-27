@@ -4,7 +4,7 @@ import 'colors'
 import { getRandomArbitrary, sleep } from 'emberutils'
 import { Client, createClient } from 'minecraft-protocol'
 import { SocksClient as socks } from 'socks'
-import {awaitReady, kickHandler, log, randomOf, shuffle} from '../shared'
+import { awaitReady, kickHandler, log, randomOf, shuffle } from '../shared'
 import prismarineChat from 'prismarine-chat'
 import ProxyAgent from 'proxy-agent'
 
@@ -47,7 +47,7 @@ async function main () {
         agent: useProxies ? new ProxyAgent(`socks://${proxy!.host}:${proxy!.port}`) : undefined,
         hideErrors: true,
         connect: useProxies
-            ? (client) => {
+          ? (client) => {
               socks.createConnection({
                 proxy: {
                   host: proxy!.host,
@@ -70,7 +70,7 @@ async function main () {
                 } else console.log(err)
               })
             }
-            : undefined
+          : undefined
       })
     }
 

@@ -7,7 +7,7 @@ import 'colors'
 import { getRandomArbitrary, sleep } from 'emberutils'
 import { Client, createClient } from 'minecraft-protocol'
 import { SocksClient as socks } from 'socks'
-import {awaitReady, chat, hash, kickHandler, log, randomOf, shuffle} from '../shared'
+import { awaitReady, chat, hash, kickHandler, log, randomOf, shuffle } from '../shared'
 import prismarineChat from 'prismarine-chat'
 import ProxyAgent from 'proxy-agent'
 
@@ -29,7 +29,7 @@ async function main () {
 
   const useProxies: boolean = !(workerOptions.proxies == null)
 
-  const chatCallbacks: ((message:string) => void)[] = []
+  const chatCallbacks: Array<(message: string) => void> = []
 
   parentPort?.on('message', (message) => {
     if (message.channel === 'say') {
@@ -112,7 +112,6 @@ async function main () {
       bot.write('chat', { message: message })
     })
 
-
     function registerListeners () {
       bot.on('error', async error => {
         log(`[${username}] Error: ${error} recreating`.red)
@@ -120,6 +119,11 @@ async function main () {
       })
       bot.once('login', botLoginHandler)
       bot.once('disconnect', packet => kickHandler(packet.reason, username))
+      bot.on('update_health', (packet) => {
+        if (packet.health <= 0) {
+          bot.write('client_command', { payload: 0 })
+        }
+      })
     }
 
     function botLoginHandler () {
@@ -151,7 +155,7 @@ async function main () {
       })
     }
 
-    async function recreateBot(): Promise<void> {
+    async function recreateBot (): Promise<void> {
       bot.end()
       bot = await createBot()
       registerListeners()

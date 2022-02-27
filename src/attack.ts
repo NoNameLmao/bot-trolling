@@ -2,15 +2,15 @@ import 'colors'
 import { Worker } from 'worker_threads'
 import os from 'os'
 import { log, shuffle } from './shared'
-import {ProxyType, AttackOptions, ProxySource, BotConfig } from '../utils/types'
+import { ProxyType, AttackOptions, ProxySource, BotConfig } from '../utils/types'
 import { host, port } from '../config.json'
 import * as ProxyScrapeAPI from '../utils/proxy-scrape'
 import fs from 'fs'
 import { sleep } from 'emberutils'
 
 const amount = {
-  workers: 20,
-  bots: 25
+  workers: 40,
+  bots: 100
 }
 
 const moduleFile = './src/register/worker.ts'
