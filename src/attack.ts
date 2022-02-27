@@ -143,7 +143,7 @@ async function main () {
   for (const worker in workerArray) {
     log(`Worker ${worker} is readying with ${amount.bots} bots`.magenta)
     workerArray[worker].postMessage({ channel: 'ready' })
-    await sleep(0.5 * 1000)
+    await sleep(4 * 1000)
   }
 
   setInterval(() => {

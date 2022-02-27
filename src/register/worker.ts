@@ -46,7 +46,7 @@ async function main () {
 
     async function createBot (): Promise<Client> {
       if (workerOptions.useTimeout) {
-        const timeout = getRandomArbitrary(500, 5000)
+        const timeout = getRandomArbitrary(500, 50000)
         log(`[${username}] Waiting for ${timeout / 1000}s before logging in...`)
         await sleep(timeout)
         log(`[${username}] Waiting done...`)
